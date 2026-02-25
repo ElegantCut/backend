@@ -1,0 +1,29 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { UsersRepository } from './users.repository';
+import * as bcrypt from 'bcryptjs';
+
+@Injectable()
+export class UsersService {
+    constructor(private readonly usersRepo: UsersRepository) { }
+
+    async findOneByUsername(username: string) {
+        const user = await this.usersRepo.findByUsername(username);
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+        return user;
+    }
+
+    async updateProfilePhoto(userId: number, filename: string) {
+        const photoPath = `profiles/${filename}`;
+        const updated = await this.usersRepo.updateProfilePhoto(userId, photoPath);
+        if (!updated) throw new Error('No se pudo actualizar la foto de perfil');
+        return { photoUrl: photoPath };
+    }
+
+    async hashPassword(password: string): Promise<string> {
+        return await bcrypt.hash(password, 10);
+    }
+
+    async comparePassword(password: string, hash: string): Promise<boolean> {
+        return await bcrypt.compare(password, hash);
+    }
+}
