@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Pool } from 'mysql2/promise';
+import type { Pool } from 'mysql2/promise';
 
 @Injectable()
 export class DashboardRepository {
