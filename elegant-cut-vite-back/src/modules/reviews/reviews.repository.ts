@@ -1,23 +1,22 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ReviewsRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async findAllApproved() {
-        const [rows]: any = await this.pool.execute(
-            'SELECT * FROM resenas WHERE estado = 1 ORDER BY fecha_resena DESC',
-        );
-        return rows;
+        return this.prisma.resenas.findMany({
+            where: { estado: 1 },
+            orderBy: { fecha_resena: 'desc' },
+        });
     }
 
     async create(data: any) {
         const { nombre_cliente, email_cliente, calificacion, comentario } = data;
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            'INSERT INTO resenas (nombre_cliente, email_cliente, calificacion, comentario) VALUES (?, ?, ?, ?)',
-            [nombre_cliente, email_cliente, calificacion, comentario],
-        );
-        return result.insertId;
+        const result = await this.prisma.resenas.create({
+            data: { nombre_cliente, email_cliente, calificacion, comentario },
+        });
+        return result.id_resena;
     }
 }

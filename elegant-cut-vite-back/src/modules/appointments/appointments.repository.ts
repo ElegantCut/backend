@@ -1,39 +1,51 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader, PoolConnection } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AppointmentsRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        const [rows]: any = await this.pool.execute(
-            `SELECT r.id_reservas, r.fecha, r.observaciones, r.id_estado_cita,
-              CONCAT(u.prim_nombre, ' ', u.apellido1) as cliente,
-              COALESCE(h.hora_inicio, 0) as hora_inicio
-       FROM reservas r
-       LEFT JOIN usuarios u ON r.id_usuario = u.id_usuario
-       LEFT JOIN horarios h ON r.id_horarios = h.id_horarios
-       ORDER BY r.fecha DESC`,
-        );
-        return rows;
+        return this.prisma.reservas.findMany({
+            orderBy: { fecha: 'desc' },
+            select: {
+                id_reservas: true,
+                fecha: true,
+                observaciones: true,
+                id_estado_cita: true,
+                usuarios: {
+                    select: { prim_nombre: true, apellido1: true },
+                },
+                horarios: {
+                    select: { hora_inicio: true },
+                },
+            },
+        });
     }
 
     async getAvailableSlots(date: string, barberId: number) {
-        const [allSlots]: any = await this.pool.execute(
-            'SELECT id_horarios, hora_inicio FROM horarios ORDER BY hora_inicio ASC',
+        const targetDate = new Date(date);
+        const nextDay = new Date(targetDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const [allSlots, occupied] = await Promise.all([
+            this.prisma.horarios.findMany({
+                orderBy: { hora_inicio: 'asc' },
+            }),
+            this.prisma.reservas.findMany({
+                where: {
+                    fecha: { gte: targetDate, lt: nextDay },
+                    id_estado_cita: { in: [1, 2] },
+                },
+                select: { horarios: { select: { hora_inicio: true } } },
+            }),
+        ]);
+
+        const occupiedTimes = new Set(
+            occupied.map((r) => r.horarios?.hora_inicio),
         );
 
-        const [occupied]: any = await this.pool.execute(
-            `SELECT h.hora_inicio 
-       FROM reservas r
-       JOIN horarios h ON r.id_horarios = h.id_horarios
-       WHERE r.fecha = ? AND r.id_empleado = ? AND r.id_estado_cita IN (1, 2)`,
-            [date, barberId],
-        );
-
-        const occupiedTimes = new Set(occupied.map((o: any) => o.hora_inicio));
-
-        return allSlots.map((slot: any) => ({
+        return allSlots.map((slot) => ({
             id: slot.id_horarios,
             time: slot.hora_inicio.toString().padStart(4, '0').replace(/(\d{2})(\d{2})/, '$1:$2'),
             isAvailable: !occupiedTimes.has(slot.hora_inicio),
@@ -41,30 +53,29 @@ export class AppointmentsRepository {
     }
 
     async create(appointmentData: any) {
-        const connection = await this.pool.getConnection();
-        try {
-            await connection.beginTransaction();
-            const { userId, date, notes, idHorarios, barberId, serviceId } = appointmentData;
+        const { userId, date, notes, idHorarios, serviceId } = appointmentData;
 
-            const [reservaResult] = await connection.execute<ResultSetHeader>(
-                `INSERT INTO reservas (fecha, observaciones, id_usuario, id_estado_cita, id_horarios, id_empleado) 
-         VALUES (?, ?, ?, 1, ?, ?)`,
-                [date, notes || '', userId, idHorarios, barberId],
-            );
+        return this.prisma.$transaction(async (tx) => {
+            const reserva = await tx.reservas.create({
+                data: {
+                    fecha: new Date(date),
+                    observaciones: notes || '',
+                    id_usuario: userId,
+                    id_estado_cita: 1,
+                    id_horarios: idHorarios,
+                    // Nota: id_empleado no existe en el schema actual.
+                    // Agregar la columna en MySQL y regenerar con: npx prisma db pull && npx prisma generate
+                },
+            });
 
-            const reservaId = reservaResult.insertId;
-            await connection.execute(
-                'INSERT INTO detalle_cita_servicio (id_reservas, id_servicio) VALUES (?, ?)',
-                [reservaId, serviceId],
-            );
+            await tx.detalle_cita_servicio.create({
+                data: {
+                    id_reservas: reserva.id_reservas,
+                    id_servicio: serviceId,
+                },
+            });
 
-            await connection.commit();
-            return reservaId;
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
+            return reserva.id_reservas;
+        });
     }
 }

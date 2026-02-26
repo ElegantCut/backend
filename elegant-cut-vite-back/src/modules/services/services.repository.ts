@@ -1,31 +1,32 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ServicesRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        const [rows]: any = await this.pool.execute(
-            'SELECT * FROM servicios ORDER BY nombre_servicio',
-        );
-        return rows;
+        // En el schema el campo es 'nombre', no 'nombre_servicio'
+        return this.prisma.servicios.findMany({
+            orderBy: { nombre: 'asc' },
+        });
     }
 
     async findById(id: number) {
-        const [rows]: any = await this.pool.execute(
-            'SELECT * FROM servicios WHERE id_servicio = ?',
-            [id],
-        );
-        return rows[0];
+        return this.prisma.servicios.findFirst({
+            where: { id_servicio: id },
+        });
     }
 
     async create(data: any) {
         const { nombre_servicio, precio, duracion } = data;
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            'INSERT INTO servicios (nombre_servicio, precio, duracion) VALUES (?, ?, ?)',
-            [nombre_servicio, precio, duracion],
-        );
-        return result.insertId;
+        const result = await this.prisma.servicios.create({
+            data: {
+                nombre: nombre_servicio, // el campo en la tabla se llama 'nombre'
+                precio,
+                duracion,
+            },
+        });
+        return result.id_servicio;
     }
 }

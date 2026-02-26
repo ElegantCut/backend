@@ -15,11 +15,11 @@ export class AuthService {
         const { username, password } = loginDto;
         const user = await this.usersService.findOneByUsername(username);
 
-        const isMatch = await this.usersService.comparePassword(password, user.password_hash);
+        const isMatch = await this.usersService.comparePassword(password, user.password_hash ?? '');
         if (!isMatch) throw new UnauthorizedException('Contraseña incorrecta');
 
         // Normalización de roles para el frontend
-        let role = user.role ? user.role.toLowerCase() : 'cliente';
+        let role = user.rol?.nombre_rol ? user.rol.nombre_rol.toLowerCase() : 'cliente';
         if (role === 'administrador') role = 'admin';
         if (role === 'barbero') role = 'barber';
 

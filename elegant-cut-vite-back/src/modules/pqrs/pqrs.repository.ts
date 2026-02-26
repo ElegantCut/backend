@@ -1,29 +1,27 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class PqrsRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
+
+    // NOTA: La tabla 'pqrs' no existe aún en tu MySQL.
+    // Hay que crearla primero y luego correr:
+    //   npx prisma db pull
+    //   npx prisma generate
+    // Mientras tanto estos métodos están preparados pero lanzarán error en runtime.
 
     async create(data: any) {
-        const { requestType, userName, userId, userEmail, userPhone, subject, description, responseMedium } = data;
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            `INSERT INTO pqrs 
-       (tipo_solicitud, nombre_completo, identificacion, email, telefono, asunto, descripcion, medio_respuesta) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [requestType, userName, userId, userEmail, userPhone, subject, description, responseMedium],
-        );
-        return result.insertId;
+        // TODO: descomentar cuando la tabla pqrs exista en MySQL y el schema esté actualizado
+        // const { requestType, userName, userId, userEmail, userPhone, subject, description, responseMedium } = data;
+        // const result = await this.prisma.pqrs.create({ ... });
+        // return result.id_pqrs;
+        throw new Error('Tabla pqrs no existe en la base de datos. Créala y ejecuta npx prisma db pull + npx prisma generate');
     }
 
     async findByUserData(email: string, phone: string) {
-        const [rows]: any = await this.pool.execute(
-            `SELECT id_pqrs, tipo_solicitud, asunto, fecha_creacion, estado 
-       FROM pqrs 
-       WHERE email = ? OR telefono = ? 
-       ORDER BY fecha_creacion DESC`,
-            [email, phone],
-        );
-        return rows;
+        // TODO: descomentar cuando la tabla pqrs exista en MySQL y el schema esté actualizado
+        // return this.prisma.pqrs.findMany({ ... });
+        throw new Error('Tabla pqrs no existe en la base de datos. Créala y ejecuta npx prisma db pull + npx prisma generate');
     }
 }

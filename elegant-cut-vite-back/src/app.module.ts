@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BarbersModule } from './modules/barbers/barbers.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
@@ -15,7 +15,7 @@ import { EmailModule } from './modules/email/email.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
+    PrismaModule,
     AuthModule,
     UsersModule,
     BarbersModule,
@@ -29,3 +29,4 @@ import { EmailModule } from './modules/email/email.module';
   ],
 })
 export class AppModule { }
+
