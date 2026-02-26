@@ -1,28 +1,46 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class DashboardRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async getSummaryStats() {
-        const [stats]: any = await this.pool.execute(`
-      SELECT 
-        (SELECT COUNT(*) FROM reservas WHERE DATE(fecha) = CURRENT_DATE()) as citasHoy,
-        (SELECT COUNT(*) FROM reservas WHERE id_estado_cita = 1) as citasPendientes,
-        (SELECT COUNT(*) FROM usuarios WHERE id_rol = 3 AND DATE(created_at) = CURRENT_DATE()) as clientesNuevos
-    `);
-        return stats[0];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const [citasHoy, citasPendientes, clientesNuevos] = await Promise.all([
+            this.prisma.reservas.count({
+                where: { fecha: { gte: today, lt: tomorrow } },
+            }),
+            this.prisma.reservas.count({
+                where: { id_estado_cita: 1 },
+            }),
+            this.prisma.usuarios.count({
+                where: {
+                    id_rol: 3,
+                    created_at: { gte: today, lt: tomorrow },
+                },
+            }),
+        ]);
+
+        return { citasHoy, citasPendientes, clientesNuevos };
     }
 
     async getRecentActivity() {
-        const [rows]: any = await this.pool.execute(`
-      SELECT r.id_reservas, r.fecha, CONCAT(u.prim_nombre, ' ', u.apellido1) as cliente, r.id_estado_cita
-      FROM reservas r
-      JOIN usuarios u ON r.id_usuario = u.id_usuario
-      ORDER BY r.created_at DESC
-      LIMIT 10
-    `);
-        return rows;
+        return this.prisma.reservas.findMany({
+            take: 10,
+            orderBy: { fecha: 'desc' },
+            select: {
+                id_reservas: true,
+                fecha: true,
+                id_estado_cita: true,
+                usuarios: {
+                    select: { prim_nombre: true, apellido1: true },
+                },
+            },
+        });
     }
 }

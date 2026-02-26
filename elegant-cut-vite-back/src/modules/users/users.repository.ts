@@ -1,80 +1,83 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UsersRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async findByUsername(username: string) {
-        const [rows]: any = await this.pool.execute(
-            `SELECT u.*, r.nombre_rol as role 
-       FROM usuarios u 
-       LEFT JOIN rol r ON u.id_rol = r.id_rol 
-       WHERE u.username = ? AND u.estado = 1`,
-            [username],
-        );
-        return rows[0];
+        return this.prisma.usuarios.findFirst({
+            where: { username, estado: true },
+            include: { rol: true },
+        });
     }
 
     async findByEmail(email: string) {
-        const [rows]: any = await this.pool.execute(
-            'SELECT * FROM usuarios WHERE email = ? AND estado = 1',
-            [email],
-        );
-        return rows[0];
+        return this.prisma.usuarios.findFirst({
+            where: { email, estado: true },
+        });
     }
 
     async findById(id: number) {
-        const [rows]: any = await this.pool.execute(
-            `SELECT u.*, r.nombre_rol as role 
-       FROM usuarios u 
-       LEFT JOIN rol r ON u.id_rol = r.id_rol 
-       WHERE u.id_usuario = ? AND u.estado = 1`,
-            [id],
-        );
-        return rows[0];
+        return this.prisma.usuarios.findFirst({
+            where: { id_usuario: id, estado: true },
+            include: { rol: true },
+        });
     }
 
     async create(userData: any, idRol: number, hashedPassword: string) {
         const { username, email, prim_nombre, seg_nombre, apellido1, apellido2, telefono } = userData;
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            `INSERT INTO usuarios(username, password_hash, email, prim_nombre, seg_nombre, apellido1, apellido2, telefono, id_rol, estado)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [username, hashedPassword, email, prim_nombre, seg_nombre, apellido1, apellido2, telefono, idRol],
-        );
-        return result.insertId;
+        const result = await this.prisma.usuarios.create({
+            data: {
+                username,
+                password_hash: hashedPassword,
+                email,
+                prim_nombre,
+                seg_nombre,
+                apellido1,
+                apellido2,
+                telefono,
+                id_rol: idRol,
+                estado: true,
+            },
+        });
+        return result.id_usuario;
     }
 
     async updatePassword(identifier: string, hashedPassword: string, isEmail = false) {
-        const field = isEmail ? 'email' : 'username';
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            `UPDATE usuarios SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE ${field} = ?`,
-            [hashedPassword, identifier],
-        );
-        return result.affectedRows > 0;
+        const where = isEmail ? { email: identifier } : { username: identifier };
+        const result = await this.prisma.usuarios.updateMany({
+            where,
+            data: { password_hash: hashedPassword },
+        });
+        return result.count > 0;
     }
 
     async updateProfilePhoto(userId: number, photoPath: string) {
-        const [result] = await this.pool.execute<ResultSetHeader>(
-            'UPDATE usuarios SET foto_perfil = ? WHERE id_usuario = ?',
-            [photoPath, userId],
-        );
-        return result.affectedRows > 0;
+        const result = await this.prisma.usuarios.updateMany({
+            where: { id_usuario: userId },
+            data: { foto_perfil: photoPath },
+        });
+        return result.count > 0;
     }
 
     async findRoleIdByName(roleName: string): Promise<number | null> {
-        const [rows]: any = await this.pool.execute(
-            'SELECT id_rol FROM rol WHERE nombre_rol = ?',
-            [roleName],
-        );
-        if (rows.length > 0) return rows[0].id_rol;
+        const rol = await this.prisma.rol.findFirst({
+            where: { nombre_rol: roleName },
+        });
+        if (rol) return rol.id_rol;
 
         // Fallback para 'administrador'
         if (roleName.toLowerCase() === 'administrador') {
-            const [rowsFallback]: any = await this.pool.execute(
-                "SELECT id_rol FROM rol WHERE nombre_rol LIKE '%Admin%' OR nombre_rol LIKE '%admin%'",
-            );
-            if (rowsFallback.length > 0) return rowsFallback[0].id_rol;
+            const rolFallback = await this.prisma.rol.findFirst({
+                where: {
+                    OR: [
+                        { nombre_rol: { contains: 'Admin' } },
+                        { nombre_rol: { contains: 'admin' } },
+                    ],
+                },
+            });
+            if (rolFallback) return rolFallback.id_rol;
         }
         return null;
     }

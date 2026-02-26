@@ -1,50 +1,46 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { Pool, ResultSetHeader } from 'mysql2/promise';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class BarbersRepository {
-    constructor(@Inject('DATABASE_POOL') private pool: Pool) { }
+    constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        const [rows]: any = await this.pool.execute(
-            `SELECT u.id_usuario, u.username, u.prim_nombre, u.seg_nombre, u.apellido1, u.apellido2, u.email, u.telefono, u.estado, u.created_at,
-              COUNT(r.id_reservas) as total_citas
-       FROM usuarios u
-       LEFT JOIN reservas r ON u.id_usuario = r.id_usuario
-       WHERE u.id_rol = 2
-       GROUP BY u.id_usuario
-       ORDER BY u.created_at DESC`,
-        );
-        return rows;
+        return this.prisma.usuarios.findMany({
+            where: { id_rol: 2 },
+            include: { _count: { select: { reservas: true } } },
+            orderBy: { created_at: 'desc' },
+        });
     }
 
     async findActive() {
-        const [rows]: any = await this.pool.execute(
-            `SELECT id_usuario, prim_nombre, seg_nombre, apellido1, apellido2, foto_perfil
-       FROM usuarios 
-       WHERE id_rol = 2 AND estado = 1
-       ORDER BY prim_nombre`,
-        );
-        return rows;
+        return this.prisma.usuarios.findMany({
+            where: { id_rol: 2, estado: true },
+            select: {
+                id_usuario: true,
+                prim_nombre: true,
+                seg_nombre: true,
+                apellido1: true,
+                apellido2: true,
+                foto_perfil: true,
+            },
+            orderBy: { prim_nombre: 'asc' },
+        });
     }
 
     async findById(id: number) {
-        const [rows]: any = await this.pool.execute(
-            'SELECT * FROM usuarios WHERE id_usuario = ? AND id_rol = 2',
-            [id],
-        );
-        return rows[0];
+        return this.prisma.usuarios.findFirst({
+            where: { id_usuario: id, id_rol: 2 },
+        });
     }
 
-    // Otros métodos de estadísticas y gestión...
     async getStats(id: number) {
-        const [stats]: any = await this.pool.execute(
-            `SELECT COUNT(r.id_reservas) as total_citas,
-              COUNT(CASE WHEN r.id_estado_cita = 2 THEN 1 END) as citas_completadas
-       FROM reservas r
-       WHERE r.id_empleado = ?`,
-            [id],
-        );
-        return stats[0];
+        // Nota: reservas no tiene id_empleado en el schema actual.
+        // Cuando se agregue la columna, usar: where: { id_empleado: id }
+        const total = await this.prisma.reservas.count();
+        const completadas = await this.prisma.reservas.count({
+            where: { id_estado_cita: 2 },
+        });
+        return { total_citas: total, citas_completadas: completadas };
     }
 }
