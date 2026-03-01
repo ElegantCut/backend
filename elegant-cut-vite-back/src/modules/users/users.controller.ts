@@ -1,5 +1,6 @@
-import { Controller, Get, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { CrearUsuarioDto } from './dto/create-users.dto';
 
 @Controller('users')
 export class UsersController {
@@ -8,5 +9,12 @@ export class UsersController {
     @Get()
     async getAllUsers() {
         return this.usersService.obtenerTodos();
+    }
+
+    // Este es el nuevo método
+
+    @Post()
+    async crearUsuario(@Body() crearUsuarioDto: CrearUsuarioDto) {
+        return this.usersService.crearUsuario(crearUsuarioDto);
     }
 }
