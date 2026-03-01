@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PqrsRepository } from './pqrs.repository';
 import { EmailService } from '../email/email.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class PqrsService {
     constructor(
         private readonly pqrsRepo: PqrsRepository,
         private readonly emailService: EmailService,
+        private readonly prisma: PrismaService,
     ) { }
 
     async create(data: any) {
@@ -26,5 +28,9 @@ export class PqrsService {
 
     async searchByUser(email: string, phone: string) {
         return this.pqrsRepo.findByUserData(email, phone);
+    }
+
+    async obtenerPqrs() {
+        return this.prisma.pqrs.findMany();
     }
 }

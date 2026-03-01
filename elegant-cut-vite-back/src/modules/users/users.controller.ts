@@ -5,8 +5,8 @@ import { UsersService } from './users.service';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
-    @Get('profile')
-    async getProfile(@Request() req: any) {
-        return req.user;
+    @Get()
+    async getAllUsers() {
+        return this.usersService.obtenerTodos();
     }
 }
