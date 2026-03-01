@@ -17,6 +17,8 @@ export class ReviewsService {
     //Este es de prisma RECORDAR
 
     async obtenerResenas() {
-        return this.prisma.resenas.findMany();
+        // FIXME: La tabla 'resenas' ya no existe en la base de datos
+        // return this.prisma.resenas.findMany();
+        return [];
     }
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PqrsRepository } from './pqrs.repository';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CrearPqrsDto } from './dto/create-pqrs.dto';
 
 @Injectable()
 export class PqrsService {
@@ -11,23 +12,25 @@ export class PqrsService {
         private readonly prisma: PrismaService,
     ) { }
 
-    async create(data: any) {
+    async create(data: CrearPqrsDto) {
+        // Guardar PQRS en DB
         const id = await this.pqrsRepo.create(data);
 
         // Enviar email de confirmación
         const radicado = `PQRS-${id}-${new Date().getFullYear()}`;
+
         await this.emailService.sendPqrsConfirmation(
-            data.userEmail,
-            data.userName,
+            data.email,
+            data.nombre_completo,
             radicado,
-            data.requestType
+            data.tipo_solicitud
         );
 
-        return { success: true, radicado };
+        return { success: true, radicado: `PQRS-${id}-${new Date().getFullYear()}` };
     }
 
-    async searchByUser(email: string, phone: string) {
-        return this.pqrsRepo.findByUserData(email, phone);
+    async searchByUser(email: string) {
+        return this.pqrsRepo.findByUserData(email);
     }
 
     async obtenerPqrs() {
