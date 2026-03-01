@@ -6,8 +6,8 @@ export class BarbersController {
     constructor(private readonly barbersService: BarbersService) { }
 
     @Get()
-    async getPublic() {
-        return this.barbersService.getPublicBarbers();
+    async obtenerBarberos() {
+        return this.barbersService.obtenerBarberos();
     }
 
     @Get('admin/all')

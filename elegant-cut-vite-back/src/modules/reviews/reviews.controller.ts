@@ -5,10 +5,13 @@ import { ReviewsService } from './reviews.service';
 export class ReviewsController {
     constructor(private readonly reviewsService: ReviewsService) { }
 
+    // este es el del ejemplo de prisma
+
     @Get()
-    async getAll() {
-        return this.reviewsService.findApproved();
+    async obtenerResenas() {
+        return this.reviewsService.obtenerResenas();
     }
+
 
     @Post()
     async create(@Body() data: any) {
