@@ -1,10 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcryptjs';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly usersRepo: UsersRepository) { }
+    // UN SOLO CONSTRUCTOR: Inyecta ambas dependencias aquí
+    constructor(
+        private readonly usersRepo: UsersRepository,
+        private readonly prisma: PrismaService
+    ) { }
 
     async findOneByUsername(username: string) {
         const user = await this.usersRepo.findByUsername(username);
@@ -25,5 +30,16 @@ export class UsersService {
 
     async comparePassword(password: string, hash: string): Promise<boolean> {
         return await bcrypt.compare(password, hash);
+    }
+
+    // MÉTODOS DE PRISMA
+    async obtenerTodos() {
+        return this.prisma.usuarios.findMany();
+    }
+
+    async crearUsuario(data: any) {
+        return this.prisma.usuarios.create({
+            data,
+        });
     }
 }

@@ -10,8 +10,8 @@ export class PqrsController {
         return this.pqrsService.create(data);
     }
 
-    @Get('search')
-    async search(@Query('email') email: string, @Query('phone') phone: string) {
-        return this.pqrsService.searchByUser(email, phone);
+    @Get()
+    async obtenerPqrs() {
+        return this.pqrsService.obtenerPqrs();
     }
 }

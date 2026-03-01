@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model codigos_verificacion {
@@ -120,13 +120,42 @@ model usuarios {
   created_at    DateTime   @default(now()) @db.Timestamp(0)
   updated_at    DateTime   @default(now()) @db.Timestamp(0)
   foto_perfil   String?    @db.LongText
+  pqrs          pqrs[]
   reservas      reservas[]
   rol           rol        @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
   @@index([id_rol], map: "fk_rol_usuario")
 }
 
+model pqrs {
+  id_pqrs         Int          @id @default(autoincrement())
+  tipo            pqrs_tipo
+  asunto          String       @db.VarChar(100)
+  descripcion     String       @db.Text
+  fecha_creacion  DateTime?    @default(now()) @db.DateTime(0)
+  estado          pqrs_estado? @default(Pendiente)
+  id_usuario      Int
+  respuesta_admin String?      @db.Text
+  usuarios        usuarios     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: Restrict, map: "fk_usuario_pqrs")
+
+  @@index([id_usuario], map: "fk_usuario_pqrs")
+}
+
 enum codigos_verificacion_tipo {
   registro
   recuperacion
+}
+
+enum pqrs_tipo {
+  Peticion
+  Queja
+  Reclamo
+  Sugerencia
+}
+
+enum pqrs_estado {
+  Pendiente
+  En_Proceso @map("En Proceso")
+  Resuelto
+  Cerrado
 }
