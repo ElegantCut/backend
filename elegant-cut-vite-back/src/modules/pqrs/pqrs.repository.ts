@@ -12,16 +12,29 @@ export class PqrsRepository {
     // Mientras tanto estos métodos están preparados pero lanzarán error en runtime.
 
     async create(data: any) {
-        // TODO: descomentar cuando la tabla pqrs exista en MySQL y el schema esté actualizado
-        // const { requestType, userName, userId, userEmail, userPhone, subject, description, responseMedium } = data;
-        // const result = await this.prisma.pqrs.create({ ... });
-        // return result.id_pqrs;
-        throw new Error('Tabla pqrs no existe en la base de datos. Créala y ejecuta npx prisma db pull + npx prisma generate');
+        const { tipo_solicitud, nombre_completo, identificacion, email, telefono, asunto, descripcion, medio_respuesta, estado, respuesta } = data;
+        const result = await this.prisma.pqrs.create({
+            data: {
+                tipo_solicitud,
+                nombre_completo,
+                identificacion,
+                email,
+                telefono,
+                asunto,
+                descripcion,
+                medio_respuesta: medio_respuesta || 'email',
+                estado: estado || 'pendiente',
+                respuesta
+            }
+        });
+        return result.id_pqrs;
     }
 
-    async findByUserData(email: string, phone: string) {
-        // TODO: descomentar cuando la tabla pqrs exista en MySQL y el schema esté actualizado
-        // return this.prisma.pqrs.findMany({ ... });
-        throw new Error('Tabla pqrs no existe en la base de datos. Créala y ejecuta npx prisma db pull + npx prisma generate');
+    async findByUserData(email: string) {
+        return this.prisma.pqrs.findMany({
+            where: {
+                email: email
+            }
+        });
     }
 }

@@ -56,16 +56,6 @@ model pagos {
   @@index([id_tipo_pago], map: "fk_pago_tipo")
 }
 
-model resenas {
-  id_resena      Int       @id @default(autoincrement())
-  nombre_cliente String    @db.VarChar(100)
-  email_cliente  String    @db.VarChar(100)
-  calificacion   Int
-  comentario     String    @db.Text
-  fecha_resena   DateTime? @default(now()) @db.DateTime(0)
-  estado         Int?      @default(1) @db.TinyInt
-}
-
 model reservas {
   id_reservas           Int                     @id @default(autoincrement())
   fecha                 DateTime                @db.DateTime(0)
@@ -120,7 +110,6 @@ model usuarios {
   created_at    DateTime   @default(now()) @db.Timestamp(0)
   updated_at    DateTime   @default(now()) @db.Timestamp(0)
   foto_perfil   String?    @db.LongText
-  pqrs          pqrs[]
   reservas      reservas[]
   rol           rol        @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
@@ -128,17 +117,19 @@ model usuarios {
 }
 
 model pqrs {
-  id_pqrs         Int          @id @default(autoincrement())
-  tipo            pqrs_tipo
-  asunto          String       @db.VarChar(100)
-  descripcion     String       @db.Text
-  fecha_creacion  DateTime?    @default(now()) @db.DateTime(0)
-  estado          pqrs_estado? @default(Pendiente)
-  id_usuario      Int
-  respuesta_admin String?      @db.Text
-  usuarios        usuarios     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: Restrict, map: "fk_usuario_pqrs")
-
-  @@index([id_usuario], map: "fk_usuario_pqrs")
+  id_pqrs         Int                   @id @default(autoincrement())
+  tipo_solicitud  pqrs_tipo_solicitud
+  nombre_completo String                @db.VarChar(100)
+  identificacion  String?               @db.VarChar(20)
+  email           String                @db.VarChar(100)
+  telefono        String?               @db.VarChar(20)
+  asunto          String                @db.VarChar(100)
+  descripcion     String                @db.Text
+  medio_respuesta pqrs_medio_respuesta? @default(email)
+  estado          pqrs_estado?          @default(pendiente)
+  fecha_creacion  DateTime              @default(now()) @db.Timestamp(0)
+  fecha_respuesta DateTime?             @db.Timestamp(0)
+  respuesta       String?               @db.Text
 }
 
 enum codigos_verificacion_tipo {
@@ -146,16 +137,22 @@ enum codigos_verificacion_tipo {
   recuperacion
 }
 
-enum pqrs_tipo {
-  Peticion
-  Queja
-  Reclamo
-  Sugerencia
+enum pqrs_tipo_solicitud {
+  peticion
+  queja
+  reclamo
+  sugerencia
+}
+
+enum pqrs_medio_respuesta {
+  email
+  telefono
+  mail
 }
 
 enum pqrs_estado {
-  Pendiente
-  En_Proceso @map("En Proceso")
-  Resuelto
-  Cerrado
+  pendiente
+  en_proceso
+  resuelto
+  cerrado
 }
