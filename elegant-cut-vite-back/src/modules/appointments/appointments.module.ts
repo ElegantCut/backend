@@ -3,6 +3,7 @@ import { AppointmentsService } from './appointments.service';
 import { AppointmentsRepository } from './appointments.repository';
 import { AppointmentsController } from './appointments.controller';
 import { UsersModule } from '../users/users.module';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
     imports: [UsersModule],
