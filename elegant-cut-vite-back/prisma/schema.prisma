@@ -96,40 +96,65 @@ model tipo_pago {
 }
 
 model usuarios {
-  id_usuario    Int        @id @default(autoincrement())
-  username      String?    @unique(map: "username") @db.VarChar(50)
-  prim_nombre   String     @db.VarChar(70)
-  seg_nombre    String?    @db.VarChar(70)
-  apellido1     String     @db.VarChar(70)
-  apellido2     String?    @db.VarChar(70)
-  email         String     @db.VarChar(70)
-  password_hash String?    @db.VarChar(255)
-  telefono      String?    @db.VarChar(20)
-  estado        Boolean    @default(true)
+  id_usuario    Int           @id @default(autoincrement())
+  username      String?       @unique(map: "username") @db.VarChar(50)
+  prim_nombre   String        @db.VarChar(70)
+  seg_nombre    String?       @db.VarChar(70)
+  apellido1     String        @db.VarChar(70)
+  apellido2     String?       @db.VarChar(70)
+  email         String        @db.VarChar(70)
+  password_hash String?       @db.VarChar(255)
+  telefono      String?       @db.VarChar(20)
+  estado        Boolean       @default(true)
   id_rol        Int
-  created_at    DateTime   @default(now()) @db.Timestamp(0)
-  updated_at    DateTime   @default(now()) @db.Timestamp(0)
-  foto_perfil   String?    @db.LongText
+  created_at    DateTime      @default(now()) @db.Timestamp(0)
+  updated_at    DateTime      @default(now()) @db.Timestamp(0)
+  foto_perfil   String?       @db.VarChar(255)
+  portafolios   portafolios[]
+  pqrs          pqrs[]
   reservas      reservas[]
-  rol           rol        @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
+  rol           rol           @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
   @@index([id_rol], map: "fk_rol_usuario")
 }
 
 model pqrs {
-  id_pqrs         Int                   @id @default(autoincrement())
-  tipo_solicitud  pqrs_tipo_solicitud
-  nombre_completo String                @db.VarChar(100)
-  identificacion  String?               @db.VarChar(20)
-  email           String                @db.VarChar(100)
-  telefono        String?               @db.VarChar(20)
-  asunto          String                @db.VarChar(100)
-  descripcion     String                @db.Text
-  medio_respuesta pqrs_medio_respuesta? @default(email)
-  estado          pqrs_estado?          @default(pendiente)
-  fecha_creacion  DateTime              @default(now()) @db.Timestamp(0)
-  fecha_respuesta DateTime?             @db.Timestamp(0)
-  respuesta       String?               @db.Text
+  id_pqrs         Int          @id @default(autoincrement())
+  tipo            pqrs_tipo
+  asunto          String       @db.VarChar(100)
+  descripcion     String       @db.Text
+  fecha_creacion  DateTime?    @default(now()) @db.DateTime(0)
+  estado          pqrs_estado? @default(Pendiente)
+  id_usuario      Int
+  respuesta_admin String?      @db.Text
+  usuarios        usuarios     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: Restrict, map: "fk_usuario_pqrs")
+
+  @@index([id_usuario], map: "fk_usuario_pqrs")
+}
+
+model portafolios {
+  id_portafolio    Int      @id @default(autoincrement())
+  id_usuario       Int
+  biografia        String?  @db.Text
+  experiencia      String?  @db.VarChar(100)
+  especialidades   String?  @db.LongText
+  calificacion     Decimal? @default(5.0) @db.Decimal(2, 1)
+  rese_as_count    Int?     @default(0) @map("reseñas_count")
+  instagram        String?  @db.VarChar(100)
+  fotos_portafolio String?  @db.LongText
+  usuarios         usuarios @relation(fields: [id_usuario], references: [id_usuario], onUpdate: Restrict, map: "portafolios_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model resenas {
+  id_resena      Int       @id @default(autoincrement())
+  nombre_cliente String    @db.VarChar(100)
+  email_cliente  String    @db.VarChar(100)
+  calificacion   Int
+  comentario     String    @db.Text
+  fecha_resena   DateTime? @default(now()) @db.DateTime(0)
+  estado         Int?      @default(1) @db.TinyInt
 }
 
 enum codigos_verificacion_tipo {
@@ -137,22 +162,16 @@ enum codigos_verificacion_tipo {
   recuperacion
 }
 
-enum pqrs_tipo_solicitud {
-  peticion
-  queja
-  reclamo
-  sugerencia
-}
-
-enum pqrs_medio_respuesta {
-  email
-  telefono
-  mail
+enum pqrs_tipo {
+  Peticion
+  Queja
+  Reclamo
+  Sugerencia
 }
 
 enum pqrs_estado {
-  pendiente
-  en_proceso
-  resuelto
-  cerrado
+  Pendiente
+  En_Proceso @map("En Proceso")
+  Resuelto
+  Cerrado
 }

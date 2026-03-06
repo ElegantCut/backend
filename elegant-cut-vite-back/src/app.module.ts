@@ -11,6 +11,8 @@ import { PqrsModule } from './modules/pqrs/pqrs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { EmailModule } from './modules/email/email.module';
+import { PortabarberoModule } from './portabarbero/portabarbero.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { EmailModule } from './modules/email/email.module';
     PqrsModule,
     DashboardModule,
     EmailModule,
+    PortabarberoModule,
+    UploadsModule,
   ],
 })
 export class AppModule { }

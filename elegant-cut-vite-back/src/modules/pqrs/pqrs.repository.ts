@@ -12,28 +12,30 @@ export class PqrsRepository {
     // Mientras tanto estos métodos están preparados pero lanzarán error en runtime.
 
     async create(data: any) {
-        const { tipo_solicitud, nombre_completo, identificacion, email, telefono, asunto, descripcion, medio_respuesta, estado, respuesta } = data;
+        // Adaptado al nuevo esquema de la base de datos
+        const { tipo, asunto, descripcion, id_usuario, estado } = data;
         const result = await this.prisma.pqrs.create({
             data: {
-                tipo_solicitud,
-                nombre_completo,
-                identificacion,
-                email,
-                telefono,
+                tipo: tipo || 'Peticion', // Valor por defecto del enum pqrs_tipo si no viene
                 asunto,
                 descripcion,
-                medio_respuesta: medio_respuesta || 'email',
-                estado: estado || 'pendiente',
-                respuesta
+                estado: estado || 'Pendiente', // Valor por defecto del enum pqrs_estado
+                id_usuario
             }
         });
         return result.id_pqrs;
     }
 
     async findByUserData(email: string) {
+        // En el nuevo esquema, se busca a través de la relación con la tabla 'usuarios'
         return this.prisma.pqrs.findMany({
             where: {
-                email: email
+                usuarios: {
+                    email: email
+                }
+            },
+            include: {
+                usuarios: true // Puede ser útil traer la info del usuario
             }
         });
     }

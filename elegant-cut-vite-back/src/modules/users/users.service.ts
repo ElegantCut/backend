@@ -6,7 +6,6 @@ import { CrearUsuarioDto } from './dto/create-users.dto';
 
 @Injectable()
 export class UsersService {
-    // UN SOLO CONSTRUCTOR: Inyecta ambas dependencias aquí
     constructor(
         private readonly usersRepo: UsersRepository,
         private readonly prisma: PrismaService
@@ -18,13 +17,6 @@ export class UsersService {
         return user;
     }
 
-    async updateProfilePhoto(userId: number, filename: string) {
-        const photoPath = `profiles/${filename}`;
-        const updated = await this.usersRepo.updateProfilePhoto(userId, photoPath);
-        if (!updated) throw new Error('No se pudo actualizar la foto de perfil');
-        return { photoUrl: photoPath };
-    }
-
     async hashPassword(password: string): Promise<string> {
         return await bcrypt.hash(password, 10);
     }
@@ -33,17 +25,37 @@ export class UsersService {
         return await bcrypt.compare(password, hash);
     }
 
-    // MÉTODOS DE PRISMA
+    /**
+     * ACTUALIZAR FOTO CON CLOUDINARY
+     * Este método reemplaza la lógica local por la de la nube.
+     */
+    async updatePhoto(id_usuario: number, public_id: string) {
+        // 1. Verificamos que el usuario exista en la tabla SQL
+        const usuario = await this.prisma.usuarios.findUnique({
+            where: { id_usuario },
+        });
+
+        if (!usuario) {
+            throw new NotFoundException(`El usuario con ID ${id_usuario} no fue encontrado.`);
+        }
+
+        // 2. Actualizamos la columna foto_perfil con el ID de Cloudinary
+        return await this.prisma.usuarios.update({
+            where: { id_usuario },
+            data: {
+                foto_perfil: public_id
+            },
+        });
+    }
+
+    // MÉTODOS DE PRISMA EXISTENTES
     async obtenerTodos() {
         return this.prisma.usuarios.findMany();
     }
 
-    // Método para crear usuario
     async crearUsuario(data: CrearUsuarioDto) {
         return await this.prisma.usuarios.create({
             data,
         });
     }
-
-
 }

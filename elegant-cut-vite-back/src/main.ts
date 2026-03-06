@@ -1,18 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // 1. Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads',
-  });
-
+  // 2. Tuberías de validación (¡Esto está perfecto!)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -21,8 +18,7 @@ async function bootstrap() {
     }),
   );
 
-  // Esto habilita cors para que el navegador le de acceso al front end
-
+  // 3. Habilitar CORS para conectar con Vite
   app.enableCors({
     origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -31,6 +27,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`\n Servidor NestJS Modular corriendo en: http://localhost:${port}/api`);
+
+  console.log(`\n Servidor corriendo en: http://localhost:${port}/api`);
 }
 bootstrap();
