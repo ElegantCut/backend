@@ -7,7 +7,7 @@ export class BarbersRepository {
 
     async findAll() {
         return this.prisma.usuarios.findMany({
-            where: { id_rol: 2 },
+            where: { id_rol: 3 },
             include: { _count: { select: { reservas: true } } },
             orderBy: { created_at: 'desc' },
         });
@@ -15,7 +15,7 @@ export class BarbersRepository {
 
     async findActive() {
         return this.prisma.usuarios.findMany({
-            where: { id_rol: 2, estado: true },
+            where: { id_rol: 3, estado: true },
             select: {
                 id_usuario: true,
                 prim_nombre: true,
@@ -30,7 +30,7 @@ export class BarbersRepository {
 
     async findById(id: number) {
         return this.prisma.usuarios.findFirst({
-            where: { id_usuario: id, id_rol: 2 },
+            where: { id_usuario: id, id_rol: 3 },
         });
     }
 

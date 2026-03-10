@@ -10,6 +10,11 @@ export class BarbersController {
         return this.barbersService.obtenerBarberos();
     }
 
+    @Get('public')
+    async getPublicBarbers() {
+        return this.barbersService.getPublicBarbers();
+    }
+
     @Get('admin/all')
     async getAllForAdmin() {
         return this.barbersService.getAllBarbers();
