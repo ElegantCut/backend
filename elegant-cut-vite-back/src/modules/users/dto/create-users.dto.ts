@@ -28,11 +28,13 @@ export class CrearUsuarioDto {
     @IsString()
     telefono?: string;
 
+    @IsOptional()
     @IsBoolean()
-    estado: boolean;
+    estado?: boolean;
 
+    @IsOptional()
     @IsNumber()
-    id_rol: number;
+    id_rol?: number;
 
     @IsOptional()
     @IsString()

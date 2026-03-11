@@ -55,7 +55,19 @@ export class UsersService {
 
     async crearUsuario(data: CrearUsuarioDto) {
         return await this.prisma.usuarios.create({
-            data,
+            data: {
+                username: data.username,
+                prim_nombre: data.prim_nombre,
+                seg_nombre: data.seg_nombre,
+                apellido1: data.apellido1,
+                apellido2: data.apellido2,
+                email: data.email,
+                password_hash: data.password_hash,
+                telefono: data.telefono,
+                estado: data.estado !== undefined ? data.estado : true,
+                id_rol: data.id_rol !== undefined ? data.id_rol : 2,
+                foto_perfil: data.foto_perfil
+            },
         });
     }
 }
