@@ -1,0 +1,43 @@
+$kind: http-request
+url: https://apipruebas.minhacienda.gov.co:11443/siif/api/epg/consultalistaobligacionespaginada
+method: POST
+headers:
+  codPCI: 46-02-00-001
+  loginUsuarioSIIF: MHwsprueba
+  consecutivo: "3"
+body:
+  type: json
+  content: "{\r
+
+    \  \"Pagination\": {\r
+
+    \    \"Page\": 1,\r
+
+    \    \"Size\": 50\r
+
+    \  },\r
+
+    \  \"lstObliEnt\": {\r
+
+    \    \"CodPCI\": \"46-02-00-001\",\r
+
+    \    \"FechaInicio\": \"2025-01-01\",\r
+
+    \    \"FechaFin\": \"2025-11-30\",\r
+
+    \    \"TipoGasto\": \"Todos\",\r
+
+    \    \"Rango\": \"Todos\",\r
+
+    \    \"Vigencia\": \"2\",\r
+
+    \    \"DetalleUsosPresupuestales\": \"No\"\r
+
+    \  }\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMzViOTJlZWVlZTU4MmY2Yjc1ZThkZTgwZTc5NzRmMzE0ZWYwODJhNjdiMTE2M2ViZGNlODYyMzE4MTZjYTUxIiwibmJmIjoxNzU5NzY1MTc3LCJleHAiOjE3NTk3Njg3NzcsImlzcyI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyIsImF1ZCI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyJ9.-PZVcIch-QQJL6naEVPKzgMKROJ5oCGEoQF6o9RDOqE
+order: 9000

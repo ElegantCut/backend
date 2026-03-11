@@ -4,10 +4,17 @@ import { AuthGuard } from '@nestjs/passport';
 import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que creamos
 
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
+    //protegemos la ruta de login con el guard
+    @UseGuards(JwtAuthGuard)
+    @Post('check-token')
+    async checkToken(@Request() req) {
+        return this.authService.validateToken(req.user);
+    }
 
     @Post('login')
     async login(@Body() loginDto: LoginDto) {

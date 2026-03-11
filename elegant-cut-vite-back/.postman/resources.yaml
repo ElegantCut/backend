@@ -1,6 +1,9 @@
 # Use this workspace to collaborate
 workspace:
   id: da745a96-161c-4528-8a33-7f47d1d764d9
+cloudResources:
+  collections:
+    ..\postman\collections\CADENA_PRESUPUESTAL PREPRODUCCION: 6342e89a-622f-47ff-9d64-b28630659970
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Query } from '@nestjs/common';
 import { PqrsService } from './pqrs.service';
 import { CrearPqrsDto } from './dto/create-pqrs.dto';
 
-@Controller('pqrs')
+@Controller('pqrs') // Url base para todas las rutas de este controlador
 export class PqrsController {
     constructor(private readonly pqrsService: PqrsService) { }
 

@@ -8,6 +8,7 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Injectable()
 export class AuthService {
@@ -153,4 +154,19 @@ export class AuthService {
 
         return { message: 'Se ha enviado un código a tu correo.' };
     }
+
+    async validateToken(user: any) {
+        return {
+            statusCode: 200,
+            message: 'Token validado exitosamente',
+            user: {
+                id_usuario: user.id_usuario,
+                email: user.email,
+                id_rol: user.id_rol,
+
+
+            }
+        }
+    }
+
 }
