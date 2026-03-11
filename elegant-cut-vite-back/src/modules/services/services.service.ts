@@ -5,18 +5,22 @@ import { CrearServicioDto } from './dto/create-servicio.dto';
 
 @Injectable()
 export class ServicesService {
+
     constructor(private readonly servicesRepo: ServicesRepository, private readonly prisma: PrismaService) { }
 
     async findAll() {
         return this.servicesRepo.findAll();
     }
 
-    async create(data: any) {
+    async create(data: CrearServicioDto) {
         return this.servicesRepo.create(data);
     }
 
     async obtenerServicios() {
-        return this.prisma.servicios.findMany();
+        // Obtenemos los servicios y la tabla relacional 'categorias' para usar su nombre en Frontend
+        return this.prisma.servicios.findMany({
+            include: { categorias: true } // <- ESTO TRAE EL NOMBRE DE LA CATEGORÍA RELACIONADA
+        });
     }
 
     //Este lo susamos para crear osea post

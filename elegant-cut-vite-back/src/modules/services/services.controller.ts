@@ -5,7 +5,12 @@ import { CrearServicioDto } from './dto/create-servicio.dto';
 @Controller('services')
 export class ServicesController {
     constructor(private readonly servicesService: ServicesService) { }
-    // metodos get
+    // --- MÉTODOS GET ---
+
+    /**
+     * Obtiene todos los servicios registrados.
+     * Se usa un solo método para evitar conflictos de rutas y mejorar el rendimiento.
+     */
     @Get()
     async getAll() {
         return this.servicesService.findAll();

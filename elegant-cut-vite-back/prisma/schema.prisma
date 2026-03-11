@@ -86,7 +86,14 @@ model servicios {
   nombre                String?                 @db.VarChar(70)
   precio                Decimal                 @db.Decimal(10, 2)
   duracion              Int
+  descripcion           String?                 @db.VarChar(150)
+  id_categoria          Int?
+  imagen                String?                 @db.VarChar(255)
+  barberos_servicios    barberos_servicios[]
   detalle_cita_servicio detalle_cita_servicio[]
+  categorias            categorias?             @relation(fields: [id_categoria], references: [id_categoria], onDelete: Restrict, onUpdate: Restrict, map: "fk_servicio_categoria")
+
+  @@index([id_categoria], map: "fk_servicio_categoria")
 }
 
 model tipo_pago {
@@ -96,24 +103,25 @@ model tipo_pago {
 }
 
 model usuarios {
-  id_usuario    Int           @id @default(autoincrement())
-  username      String?       @unique(map: "username") @db.VarChar(50)
-  prim_nombre   String        @db.VarChar(70)
-  seg_nombre    String?       @db.VarChar(70)
-  apellido1     String        @db.VarChar(70)
-  apellido2     String?       @db.VarChar(70)
-  email         String        @db.VarChar(70)
-  password_hash String?       @db.VarChar(255)
-  telefono      String?       @db.VarChar(20)
-  estado        Boolean       @default(true)
-  id_rol        Int
-  created_at    DateTime      @default(now()) @db.Timestamp(0)
-  updated_at    DateTime      @default(now()) @db.Timestamp(0)
-  foto_perfil   String?       @db.VarChar(255)
-  portafolios   portafolios[]
-  pqrs          pqrs[]
-  reservas      reservas[]
-  rol           rol           @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
+  id_usuario         Int                  @id @default(autoincrement())
+  username           String?              @unique(map: "username") @db.VarChar(50)
+  prim_nombre        String               @db.VarChar(70)
+  seg_nombre         String?              @db.VarChar(70)
+  apellido1          String               @db.VarChar(70)
+  apellido2          String?              @db.VarChar(70)
+  email              String               @db.VarChar(70)
+  password_hash      String?              @db.VarChar(255)
+  telefono           String?              @db.VarChar(20)
+  estado             Boolean              @default(true)
+  id_rol             Int
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  foto_perfil        String?              @db.VarChar(255)
+  barberos_servicios barberos_servicios[]
+  portafolios        portafolios[]
+  pqrs               pqrs[]
+  reservas           reservas[]
+  rol                rol                  @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
   @@index([id_rol], map: "fk_rol_usuario")
 }
@@ -155,6 +163,25 @@ model resenas {
   comentario     String    @db.Text
   fecha_resena   DateTime? @default(now()) @db.DateTime(0)
   estado         Int?      @default(1) @db.TinyInt
+}
+
+model barberos_servicios {
+  id_barbero_servicio Int       @id @default(autoincrement())
+  id_barbero          Int
+  id_servicio         Int
+  usuarios            usuarios  @relation(fields: [id_barbero], references: [id_usuario], onUpdate: Restrict, map: "barberos_servicios_ibfk_1")
+  servicios           servicios @relation(fields: [id_servicio], references: [id_servicio], onUpdate: Restrict, map: "barberos_servicios_ibfk_2")
+
+  @@index([id_barbero], map: "id_barbero")
+  @@index([id_servicio], map: "id_servicio")
+}
+
+model categorias {
+  id_categoria Int         @id @default(autoincrement())
+  nombre       String      @db.VarChar(100)
+  descripcion  String?     @db.VarChar(255)
+  estado       Boolean?    @default(true)
+  servicios    servicios[]
 }
 
 enum codigos_verificacion_tipo {
