@@ -149,7 +149,7 @@ export class AuthService {
             },
         });
 
-        // 5. Enviar el código por correo usando el EmailService existente
+        //  Enviar el código por correo usando el EmailService existente
         await this.emailService.sendVerificationCode(email, codigoSecreto);
 
         return { message: 'Se ha enviado un código a tu correo.' };
