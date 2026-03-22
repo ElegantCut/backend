@@ -55,4 +55,50 @@ export class BarbersService {
     return result;
 }
 
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const barbero = await this.prisma.usuarios.findFirst({
+            where: { id_usuario: id, id_rol: 3 },
+            include: {
+                portafolios: true,
+                barberos_servicios: {
+                    include: { servicios: true }
+                }
+            }
+        });
+
+        if (!barbero) throw new Error(`Barbero con ID ${id} no encontrado`);
+        
+        const { password_hash, ...result } = barbero;
+        return result;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
+        
+        if (data.password_hash) {
+            const salt = await bcrypt.genSalt(10);
+            data.password_hash = await bcrypt.hash(data.password_hash, salt);
+        }
+
+        const actualizado = await this.prisma.usuarios.update({
+            where: { id_usuario: id, id_rol: 3 },
+            data,
+        });
+
+        const { password_hash, ...result } = actualizado;
+        return result;
+    }
+
+    async remove(id: number) {
+        await this.findOne(id); // Verifica si existe
+        
+        // Soft delete
+        return await this.prisma.usuarios.update({
+            where: { id_usuario: id, id_rol: 3 },
+            data: { estado: false },
+        });
+    }
+
 }

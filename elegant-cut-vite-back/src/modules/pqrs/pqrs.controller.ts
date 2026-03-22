@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Query, Patch, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { PqrsService } from './pqrs.service';
 import { CrearPqrsDto } from './dto/create-pqrs.dto';
+import { UpdatePqrsDto } from './dto/update-pqrs.dto';
 
 @ApiTags('PQRS - Peticiones, Quejas, Reclamos y Sugerencias')
 @Controller('pqrs') // Url base para todas las rutas de este controlador
@@ -29,5 +30,22 @@ export class PqrsController {
     @Get()
     async obtenerPqrs() {
         return this.pqrsService.obtenerPqrs();
+    }
+
+    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+
+    @ApiOperation({ summary: 'Obtener detalle de una queja o reclamo', description: 'Devuelve toda la información de una PQRS específica incluyendo datos del usuario asociado.' })
+    @ApiParam({ name: 'id', description: 'ID de la PQRS', example: 1 })
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.pqrsService.findOne(id);
+    }
+
+    @ApiOperation({ summary: 'Responder y/o actualizar una PQRS', description: 'Permite al administrador enviar la respuesta o cambiar el estado de la queja de Pendiente a Resuelto.' })
+    @ApiParam({ name: 'id', description: 'ID de la PQRS a responder', example: 1 })
+    @ApiResponse({ status: 200, description: 'PQRS actualizada exitosamente.' })
+    @Patch(':id')
+    async update(@Param('id', ParseIntPipe) id: number, @Body() updatePqrsDto: UpdatePqrsDto) {
+        return this.pqrsService.update(id, updatePqrsDto);
     }
 }

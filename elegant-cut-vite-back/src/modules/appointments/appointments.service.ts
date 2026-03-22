@@ -51,4 +51,40 @@ export class AppointmentsService {
             },
         })
     }
+
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const cita = await this.prisma.reservas.findUnique({
+            where: { id_reservas: id },
+            include: {
+                usuarios: {
+                    select: { prim_nombre: true, apellido1: true, telefono: true, email: true }
+                },
+                estado_cita: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            }
+        });
+
+        if (!cita) throw new Error(`Cita con ID ${id} no encontrada`);
+        return cita;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
+
+        // Si mandan una fecha en string, la parseamos a Date
+        if (data.fecha) {
+            data.fecha = new Date(data.fecha);
+        }
+
+        return await this.prisma.reservas.update({
+            where: { id_reservas: id },
+            data,
+            include: { estado_cita: true }
+        });
+    }
 }

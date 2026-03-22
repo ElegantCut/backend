@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Delete, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { BarbersService } from './barbers.service';
 import { CreateBarberDto } from './dto/create.barbers.dto';
+import { UpdateBarberDto } from './dto/update.barbers.dto';
 
 @ApiTags('Barbers - Barberos')
 @Controller('barbers')
@@ -37,10 +38,34 @@ export class BarbersController {
 
     //acá definimos y creamos el post para crear el barbero
 
-    @ApiOperation({ summary: 'Crear un nuevo barbero', description: 'Registra un nuevo usuario con rol de barbero en la base de datos.' })
+    @ApiOperation({ summary: 'Crear un nuevo barbero', description: 'Registra un nuevo usuario con el rol 3 (Barbero) y encripta su contraseña.' })
     @ApiResponse({ status: 201, description: 'Barbero creado exitosamente.' })
     @Post()
     async crearBarbero(@Body() createBarberDto: CreateBarberDto) {
-        return this.barbersService.crearBarbero(createBarberDto);
+        return await this.barbersService.crearBarbero(createBarberDto)
+    }
+
+    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+
+    @ApiOperation({ summary: 'Obtener un barbero por ID', description: 'Devuelve información de un barbero específico, incluyendo portafolio y servicios asignados.' })
+    @ApiParam({ name: 'id', description: 'ID del barbero', example: 1 })
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.barbersService.findOne(id);
+    }
+
+    @ApiOperation({ summary: 'Actualizar datos de barbero (Admin)', description: 'Permite modificar cualquier dato de un barbero.' })
+    @ApiParam({ name: 'id', description: 'ID del barbero a editar', example: 1 })
+    @ApiResponse({ status: 200, description: 'Barbero actualizado exitosamente.' })
+    @Patch(':id')
+    async update(@Param('id', ParseIntPipe) id: number, @Body() updateBarberDto: UpdateBarberDto) {
+        return this.barbersService.update(id, updateBarberDto);
+    }
+
+    @ApiOperation({ summary: 'Desactivar/Eliminar barbero (Admin)', description: 'Borrado suave: Cambia el estado del barbero a inactivo.' })
+    @ApiParam({ name: 'id', description: 'ID del barbero a desactivar', example: 1 })
+    @Delete(':id')
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        return this.barbersService.remove(id);
     }
 }

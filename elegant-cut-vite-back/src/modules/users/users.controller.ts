@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe,Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe,Request, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
+import { UpdateUsuarioDto } from './dto/update-users.dto';
 
 @ApiTags('Users - Usuarios')
 @Controller('users')
@@ -37,5 +38,29 @@ export class UsersController {
 
     ){
         return await this.usersService.updatePhoto(id,publicId);
+    }
+
+    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+
+    @ApiOperation({ summary: 'Obtener un usuario por ID', description: 'Devuelve información detallada de un usuario específico.' })
+    @ApiParam({ name: 'id', description: 'ID del usuario', example: 1 })
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.findOne(id);
+    }
+
+    @ApiOperation({ summary: 'Actualizar datos de usuario (Admin)', description: 'Permite modificar cualquier dato de un usuario (nombre, rol, estado, etc.)' })
+    @ApiParam({ name: 'id', description: 'ID del usuario a editar', example: 1 })
+    @ApiResponse({ status: 200, description: 'Usuario actualizado existosamente.' })
+    @Patch(':id')
+    async update(@Param('id', ParseIntPipe) id: number, @Body() updateUsuarioDto: UpdateUsuarioDto) {
+        return this.usersService.update(id, updateUsuarioDto);
+    }
+
+    @ApiOperation({ summary: 'Desactivar/Eliminar usuario (Admin)', description: 'Borrado suave: Cambia el estado del usuario a inactivo en vez de borrarlo permanentemente para no afectar las relaciones de la BD.' })
+    @ApiParam({ name: 'id', description: 'ID del usuario a desactivar', example: 1 })
+    @Delete(':id')
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.remove(id);
     }
 }

@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Patch, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 
 @ApiTags('Appointments - Citas y Reservas')
 @Controller('appointments')
@@ -39,5 +40,22 @@ export class AppointmentsController {
     @Post()
     async createAppointment(@Body() CreateAppointmentDto: CreateAppointmentDto) {
         return this.appointmentsService.createAppointment(CreateAppointmentDto);
+    }
+
+    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+
+    @ApiOperation({ summary: 'Obtener detalle de una cita', description: 'Devuelve toda la información de una reserva específica incluyendo usuario, barbero y servicios afines.' })
+    @ApiParam({ name: 'id', description: 'ID de la reserva', example: 1 })
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.appointmentsService.findOne(id);
+    }
+
+    @ApiOperation({ summary: 'Actualizar estado o datos de la cita (Admin)', description: 'Permite al administrador o barbero procesar cambios, Ej: confirmar cita, cancelar cita.' })
+    @ApiParam({ name: 'id', description: 'ID de la reserva a modificar', example: 1 })
+    @ApiResponse({ status: 200, description: 'Cita actualizada exitosamente.' })
+    @Patch(':id')
+    async update(@Param('id', ParseIntPipe) id: number, @Body() updateAppointmentDto: UpdateAppointmentDto) {
+        return this.appointmentsService.update(id, updateAppointmentDto);
     }
 }

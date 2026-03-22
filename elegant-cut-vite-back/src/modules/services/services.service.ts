@@ -30,4 +30,35 @@ export class ServicesService {
             data: dato,
         })
     }
+
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const servicio = await this.prisma.servicios.findUnique({
+            where: { id_servicio: id },
+            include: { categorias: true }
+        });
+        
+        if (!servicio) throw new Error(`Servicio con ID ${id} no encontrado`);
+        return servicio;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
+        
+        return await this.prisma.servicios.update({
+            where: { id_servicio: id },
+            data,
+        });
+    }
+
+    async remove(id: number) {
+        await this.findOne(id); // Verifica si existe
+        
+        // Aquí SÍ podemos hacer un borrado real o mantener el soft delete si tienes una columna estado
+        // Asumiendo que quieres borrarlo de BD
+        return await this.prisma.servicios.delete({
+            where: { id_servicio: id },
+        });
+    }
 }
