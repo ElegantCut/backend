@@ -5,7 +5,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class PqrsRepository {
     constructor(private prisma: PrismaService) { }
 
-    // NOTA: La tabla 'pqrs' no existe aún en tu MySQL.
     // Hay que crearla primero y luego correr:
     //   npx prisma db pull
     //   npx prisma generate

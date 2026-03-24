@@ -48,6 +48,33 @@ export class PqrsService {
     }
 
     async obtenerPqrs() {
-        return this.prisma.pqrs.findMany();
+        return this.prisma.pqrs.findMany({
+            include: { usuarios: { select: { prim_nombre: true, email: true, telefono: true } } }
+        });
+    }
+
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const pqrs = await this.prisma.pqrs.findUnique({
+            where: { id_pqrs: id },
+            include: {
+                usuarios: {
+                    select: { prim_nombre: true, apellido1: true, email: true, telefono: true }
+                }
+            }
+        });
+
+        if (!pqrs) throw new Error(`PQRS con ID ${id} no encontrada`);
+        return pqrs;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
+
+        return await this.prisma.pqrs.update({
+            where: { id_pqrs: id },
+            data,
+        });
     }
 }

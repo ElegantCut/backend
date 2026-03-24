@@ -5,22 +5,22 @@ import { CrearServicioDto } from './dto/create-servicio.dto';
 
 @Injectable()
 export class ServicesService {
+
     constructor(private readonly servicesRepo: ServicesRepository, private readonly prisma: PrismaService) { }
 
     async findAll() {
         return this.servicesRepo.findAll();
     }
 
-    async create(data: any) {
-        if (!data || !data.nombre) {
-            throw new BadRequestException('El nombre del servicio es requerido');
-        }
-
+    async create(data: CrearServicioDto) {
         return this.servicesRepo.create(data);
     }
 
     async obtenerServicios() {
-        return this.prisma.servicios.findMany();
+        // Obtenemos los servicios y la tabla relacional 'categorias' para usar su nombre en Frontend
+        return this.prisma.servicios.findMany({
+            include: { categorias: true } // <- ESTO TRAE EL NOMBRE DE LA CATEGORÍA RELACIONADA
+        });
     }
 
     //Este lo usamos para crear osea post
@@ -32,6 +32,37 @@ export class ServicesService {
 
         return await this.prisma.servicios.create({
             data: dato,
+        });
+    }
+
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const servicio = await this.prisma.servicios.findUnique({
+            where: { id_servicio: id },
+            include: { categorias: true }
+        });
+        
+        if (!servicio) throw new Error(`Servicio con ID ${id} no encontrado`);
+        return servicio;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
+        
+        return await this.prisma.servicios.update({
+            where: { id_servicio: id },
+            data,
+        });
+    }
+
+    async remove(id: number) {
+        await this.findOne(id); // Verifica si existe
+        
+        // Aquí SÍ podemos hacer un borrado real o mantener el soft delete si tienes una columna estado
+        // Asumiendo que quieres borrarlo de BD
+        return await this.prisma.servicios.delete({
+            where: { id_servicio: id },
         });
     }
 }

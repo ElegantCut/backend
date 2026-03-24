@@ -6,9 +6,11 @@ export class ServicesRepository {
     constructor(private prisma: PrismaService) { }
 
     async findAll() {
-        // En el schema el campo es 'nombre', no 'nombre_servicio'
+        // Obtenemos todos los servicios e incluimos la información de la tabla relacionada 'categorias'
+        // Esto es necesario para que el frontend pueda ver el nombre de la categoría y filtrar
         return this.prisma.servicios.findMany({
             orderBy: { nombre: 'asc' },
+            include: { categorias:true } // <- RELACIÓN CON LA TABLA DE CATEGORÍAS
         });
     }
 

@@ -54,6 +54,9 @@ export class UsersService {
     }
 
     async crearUsuario(data: CrearUsuarioDto) {
+        // Encriptar la contraseña antes de guardar el usuario
+        const hashedPassword = await this.hashPassword(data.password_hash);
+
         return await this.prisma.usuarios.create({
             data: {
                 username: data.username,
@@ -62,12 +65,48 @@ export class UsersService {
                 apellido1: data.apellido1,
                 apellido2: data.apellido2,
                 email: data.email,
-                password_hash: data.password_hash,
+                password_hash: hashedPassword,
                 telefono: data.telefono,
                 estado: data.estado !== undefined ? data.estado : true,
                 id_rol: data.id_rol !== undefined ? data.id_rol : 2,
                 foto_perfil: data.foto_perfil
             },
+        });
+    }
+
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+    async findOne(id: number) {
+        const usuario = await this.prisma.usuarios.findUnique({
+            where: { id_usuario: id },
+            include: { rol: true } // Opcional: Para devolver el nombre del rol también
+        });
+
+        if (!usuario) throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        return usuario;
+    }
+
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe primero
+        
+        // Si el admin envía una contraseña nueva, la encriptamos
+        if (data.password_hash) {
+            data.password_hash = await this.hashPassword(data.password_hash);
+        }
+
+        return await this.prisma.usuarios.update({
+            where: { id_usuario: id },
+            data,
+        });
+    }
+
+    async remove(id: number) {
+        await this.findOne(id); // Verifica si existe
+
+        // Borrado suave (soft-delete): Cambiamos su estado a false (inactivo)
+        return await this.prisma.usuarios.update({
+            where: { id_usuario: id },
+            data: { estado: false },
         });
     }
 }
