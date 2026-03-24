@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -17,6 +18,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // 3. Filtro global de excepciones HTTP
+  app.useGlobalFilters(new HttpExceptionFilter());
+
 
   // 3. Habilitar CORS para conectar con Vite
   app.enableCors({

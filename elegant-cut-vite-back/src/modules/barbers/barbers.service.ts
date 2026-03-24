@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -15,14 +15,27 @@ export class BarbersService {
     }
 
     async getBarberStats(id: number) {
-        return this.barbersRepo.getStats(id);
+        const stats = await this.barbersRepo.getStats(id);
+
+        if (!stats) {
+            throw new NotFoundException(`No se encontraron estadísticas para el barbero con ID ${id}`);
+        }
+
+        return stats;
     }
-    // obtener los barberos llamandi la lógica de ts
+
+    // obtener los barberos llamando la lógica de ts
     async obtenerBarberos() {
-        return this.prisma.usuarios.findMany({
+        const barberos = await this.prisma.usuarios.findMany({
             where: {
                 id_rol: 3,
             }
-        })
+        });
+
+        if (!barberos || barberos.length === 0) {
+            throw new NotFoundException('No se encontraron barberos registrados');
+        }
+
+        return barberos;
     }
 }
