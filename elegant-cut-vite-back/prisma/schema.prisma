@@ -177,11 +177,21 @@ model barberos_servicios {
 }
 
 model categorias {
-  id_categoria Int         @id @default(autoincrement())
-  nombre       String      @db.VarChar(100)
-  descripcion  String?     @db.VarChar(255)
-  estado       Boolean?    @default(true)
-  servicios    servicios[]
+  id_categoria    Int              @id @default(autoincrement())
+  nombre          String           @db.VarChar(100)
+  descripcion     String?          @db.VarChar(255)
+  estado          Boolean?         @default(true)
+  id_genero       Int?
+  genero_servicio genero_servicio? @relation(fields: [id_genero], references: [id_genero], onDelete: Restrict, onUpdate: Restrict, map: "fk_servicio_genero")
+  servicios       servicios[]
+
+  @@index([id_genero], map: "fk_servicio_genero")
+}
+
+model genero_servicio {
+  id_genero  Int          @id @default(autoincrement())
+  nombre     String       @db.VarChar(50)
+  categorias categorias[]
 }
 
 enum codigos_verificacion_tipo {

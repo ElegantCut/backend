@@ -21,10 +21,17 @@ export class ServicesController {
         return this.servicesService.findAll();
     }
 
-    // @Get() // METODO DUPLICADO COMENTADO
     // async obtenerServicios() {
     //     return this.servicesService.obtenerServicios();
     // }
+
+    @ApiOperation({ summary: 'Obtener servicios por género', description: 'Devuelve servicios asociados a caballero (1) o dama (2).' })
+    @ApiParam({ name: 'generoId', description: 'ID de género (1=Caballero, 2=Dama)', example: 1 })
+    @ApiResponse({ status: 200, description: 'Lista de servicios filtrada.' })
+    @Get('gender/:generoId')
+    async findByGender(@Param('generoId', ParseIntPipe) generoId: number) {
+        return this.servicesService.findByGender(generoId);
+    }
 
     //metodos post
 

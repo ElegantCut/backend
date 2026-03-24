@@ -23,6 +23,24 @@ export class ServicesService {
         });
     }
 
+    async findByGender(generoId: number) {
+        // Encontramos primero las categorías que pertenecen al género
+        const categorias = await this.prisma.categorias.findMany({
+            where: { id_genero: generoId } as any
+        });
+        const categoryIds = categorias.map(c => c.id_categoria);
+
+        // Luego buscamos los servicios de esas categorías
+        return this.prisma.servicios.findMany({
+            where: {
+                id_categoria: {
+                    in: categoryIds
+                }
+            },
+            include: { categorias: true }
+        });
+    }
+
     //Este lo susamos para crear osea post
 
     async crearServicio(dato: CrearServicioDto) {
@@ -38,14 +56,14 @@ export class ServicesService {
             where: { id_servicio: id },
             include: { categorias: true }
         });
-        
+
         if (!servicio) throw new Error(`Servicio con ID ${id} no encontrado`);
         return servicio;
     }
 
     async update(id: number, data: any) {
         await this.findOne(id); // Verifica si existe
-        
+
         return await this.prisma.servicios.update({
             where: { id_servicio: id },
             data,
@@ -54,7 +72,7 @@ export class ServicesService {
 
     async remove(id: number) {
         await this.findOne(id); // Verifica si existe
-        
+
         // Aquí SÍ podemos hacer un borrado real o mantener el soft delete si tienes una columna estado
         // Asumiendo que quieres borrarlo de BD
         return await this.prisma.servicios.delete({
