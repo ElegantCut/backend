@@ -1,10 +1,9 @@
 $kind: http-request
-name: Token
-url: https://apipruebas.minhacienda.gov.co:11443/siif/api/seg/authentication?user=%5B2026-03-10%5D%5BMhwsprueba%5D&password=%5B2026-03-10%5D%5B7cObb6%40561b4%5D
+url: https://apipruebas.minhacienda.gov.co:11443/siif/api/seg/authentication?user=%5B2025-11-04%5D%5BMhwsprueba%5D&password=%5B2025-11-04%5D%5B7cObb6%40561b4%5D
 method: POST
 queryParams:
-  user: "%5B2026-03-10%5D%5BMhwsprueba%5D"
-  password: "%5B2026-03-10%5D%5B7cObb6%40561b4%5D"
+  user: "%5B2025-11-04%5D%5BMhwsprueba%5D"
+  password: "%5B2025-11-04%5D%5B7cObb6%40561b4%5D"
 body:
   type: json
   content: |-

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ServicesRepository } from './services.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CrearServicioDto } from './dto/create-servicio.dto';
@@ -41,12 +41,16 @@ export class ServicesService {
         });
     }
 
-    //Este lo susamos para crear osea post
+    //Este lo usamos para crear osea post
 
     async crearServicio(dato: CrearServicioDto) {
+        if (!dato.nombre) {
+            throw new BadRequestException('El nombre del servicio es requerido');
+        }
+
         return await this.prisma.servicios.create({
             data: dato,
-        })
+        });
     }
 
     // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
