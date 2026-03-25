@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model codigos_verificacion {
+  id        Int                       @id @default(autoincrement())
+  email     String                    @db.VarChar(100)
+  codigo    String                    @db.VarChar(6)
+  tipo      codigos_verificacion_tipo
+  expira_en DateTime                  @default(now()) @db.Timestamp(0)
+  usado     Boolean?                  @default(false)
+  creado_en DateTime                  @default(now()) @db.Timestamp(0)
+
+  @@index([email, codigo, tipo, usado], map: "idx_email_codigo")
+}
+
+model detalle_cita_servicio {
+  id_detalle_cita_servicio Int        @id @default(autoincrement())
+  id_reservas              Int?
+  id_servicio              Int?
+  reservas                 reservas?  @relation(fields: [id_reservas], references: [id_reservas], onDelete: Restrict, onUpdate: Restrict, map: "fk_detalle_reserva")
+  servicios                servicios? @relation(fields: [id_servicio], references: [id_servicio], onDelete: Restrict, onUpdate: Restrict, map: "fk_detalle_servicio")
+
+  @@index([id_reservas], map: "fk_detalle_reserva")
+  @@index([id_servicio], map: "fk_detalle_servicio")
+}
+
+model estado_cita {
+  id_estado_cita Int        @id @default(autoincrement())
+  confirmada     Boolean?   @default(true)
+  reservas       reservas[]
+}
+
+model horarios {
+  id_horarios Int        @id @default(autoincrement())
+  hora_inicio Int
+  hora_fin    Int
+  reservas    reservas[]
+}
+
+model pagos {
+  id_pago      Int        @id @default(autoincrement())
+  fecha        DateTime   @db.DateTime(0)
+  valor        Decimal    @db.Decimal(10, 2)
+  id_tipo_pago Int?
+  id_reservas  Int?
+  reservas     reservas?  @relation(fields: [id_reservas], references: [id_reservas], onDelete: Restrict, onUpdate: Restrict, map: "fk_pago_reserva")
+  tipo_pago    tipo_pago? @relation(fields: [id_tipo_pago], references: [id_tipo_pago], onDelete: Restrict, onUpdate: Restrict, map: "fk_pago_tipo")
+
+  @@index([id_reservas], map: "fk_pago_reserva")
+  @@index([id_tipo_pago], map: "fk_pago_tipo")
+}
+
+model reservas {
+  id_reservas           Int                     @id @default(autoincrement())
+  fecha                 DateTime                @db.DateTime(0)
+  observaciones         String?                 @db.VarChar(70)
+  id_usuario            Int?
+  id_empleado           Int?
+  id_estado_cita        Int?
+  id_horarios           Int?
+  detalle_cita_servicio detalle_cita_servicio[]
+  pagos                 pagos[]
+  estado_cita           estado_cita?            @relation(fields: [id_estado_cita], references: [id_estado_cita], onDelete: Restrict, onUpdate: Restrict, map: "fk_reserva_estado")
+  horarios              horarios?               @relation(fields: [id_horarios], references: [id_horarios], onDelete: Restrict, onUpdate: Restrict, map: "fk_reserva_horario")
+  usuarios              usuarios?               @relation(fields: [id_usuario], references: [id_usuario], onDelete: Restrict, onUpdate: Restrict, map: "fk_reserva_usuario")
+
+  @@index([id_estado_cita], map: "fk_reserva_estado")
+  @@index([id_horarios], map: "fk_reserva_horario")
+  @@index([id_usuario], map: "fk_reserva_usuario")
+}
+
+model rol {
+  id_rol     Int        @id @default(autoincrement())
+  nombre_rol String     @db.VarChar(50)
+  usuarios   usuarios[]
+}
+
+model servicios {
+  id_servicio           Int                     @id @default(autoincrement())
+  nombre                String?                 @db.VarChar(70)
+  precio                Decimal                 @db.Decimal(10, 2)
+  duracion              Int
+  detalle_cita_servicio detalle_cita_servicio[]
+}
+
+model tipo_pago {
+  id_tipo_pago Int     @id @default(autoincrement())
+  nombre       String? @db.VarChar(70)
+  pagos        pagos[]
+}
+
+model usuarios {
+  id_usuario    Int           @id @default(autoincrement())
+  username      String?       @unique(map: "username") @db.VarChar(50)
+  prim_nombre   String        @db.VarChar(70)
+  seg_nombre    String?       @db.VarChar(70)
+  apellido1     String        @db.VarChar(70)
+  apellido2     String?       @db.VarChar(70)
+  email         String        @db.VarChar(70)
+  password_hash String?       @db.VarChar(255)
+  telefono      String?       @db.VarChar(20)
+  estado        Boolean       @default(true)
+  id_rol        Int
+  created_at    DateTime      @default(now()) @db.Timestamp(0)
+  updated_at    DateTime      @default(now()) @db.Timestamp(0)
+  foto_perfil   String?       @db.VarChar(255)
+  portafolios   portafolios[]
+  pqrs          pqrs[]
+  reservas      reservas[]
+  rol           rol           @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
+
+  @@index([id_rol], map: "fk_rol_usuario")
+}
+
+model pqrs {
+  id_pqrs         Int          @id @default(autoincrement())
+  tipo            pqrs_tipo
+  asunto          String       @db.VarChar(100)
+  descripcion     String       @db.Text
+  fecha_creacion  DateTime?    @default(now()) @db.DateTime(0)
+  estado          pqrs_estado? @default(Pendiente)
+  id_usuario      Int
+  respuesta_admin String?      @db.Text
+  usuarios        usuarios     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: Restrict, map: "fk_usuario_pqrs")
+
+  @@index([id_usuario], map: "fk_usuario_pqrs")
+}
+
+model portafolios {
+  id_portafolio    Int      @id @default(autoincrement())
+  id_usuario       Int
+  biografia        String?  @db.Text
+  experiencia      String?  @db.VarChar(100)
+  especialidades   String?  @db.LongText
+  calificacion     Decimal? @default(5.0) @db.Decimal(2, 1)
+  rese_as_count    Int?     @default(0) @map("reseñas_count")
+  instagram        String?  @db.VarChar(100)
+  fotos_portafolio String?  @db.LongText
+  usuarios         usuarios @relation(fields: [id_usuario], references: [id_usuario], onUpdate: Restrict, map: "portafolios_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model resenas {
+  id_resena      Int       @id @default(autoincrement())
+  nombre_cliente String    @db.VarChar(100)
+  email_cliente  String    @db.VarChar(100)
+  calificacion   Int
+  comentario     String    @db.Text
+  fecha_resena   DateTime? @default(now()) @db.DateTime(0)
+  estado         Int?      @default(1) @db.TinyInt
+}
+
+model barberos_servicios {
+  id_barbero_servicio Int       @id @default(autoincrement())
+  id_barbero          Int
+  id_servicio         Int
+  usuarios            usuarios  @relation(fields: [id_barbero], references: [id_usuario], onUpdate: Restrict, map: "barberos_servicios_ibfk_1")
+  servicios           servicios @relation(fields: [id_servicio], references: [id_servicio], onUpdate: Restrict, map: "barberos_servicios_ibfk_2")
+
+  @@index([id_barbero], map: "id_barbero")
+  @@index([id_servicio], map: "id_servicio")
+}
+
+model categorias {
+  id_categoria    Int              @id @default(autoincrement())
+  nombre          String           @db.VarChar(100)
+  descripcion     String?          @db.VarChar(255)
+  estado          Boolean?         @default(true)
+  id_genero       Int?
+  genero_servicio genero_servicio? @relation(fields: [id_genero], references: [id_genero], onDelete: Restrict, onUpdate: Restrict, map: "fk_servicio_genero")
+  servicios       servicios[]
+
+  @@index([id_genero], map: "fk_servicio_genero")
+}
+
+model genero_servicio {
+  id_genero  Int          @id @default(autoincrement())
+  nombre     String       @db.VarChar(50)
+  categorias categorias[]
+}
+enum codigos_verificacion_tipo {
+  registro
+  recuperacion
+}
+
+enum pqrs_tipo {
+  Peticion
+  Queja
+  Reclamo
+  Sugerencia
+}
+
+enum pqrs_estado {
+  Pendiente
+  En_Proceso @map("En Proceso")
+  Resuelto
+  Cerrado
+}
