@@ -31,6 +31,9 @@ export class BarbersService {
         const barberos = await this.prisma.usuarios.findMany({
             where: {
                 id_rol: 3,
+            },
+            include: {
+                portafolios: true
             }
         });
 
@@ -60,6 +63,13 @@ export class BarbersService {
             password_hash: hashedPassword, // Guardamos la encriptada
             id_rol: 3,
             estado: true,
+            portafolios: {
+                create: {
+                    biografia: createBarberDto.biografia || null,
+                    experiencia: createBarberDto.experiencia || null,
+                    especialidades: createBarberDto.especialidades || null,
+                }
+            }
         },
     });
 
@@ -95,10 +105,38 @@ export class BarbersService {
             data.password_hash = await bcrypt.hash(data.password_hash, salt);
         }
 
+        // Extraer datos del portafolio
+        const portafolioData: any = {};
+        if ('biografia' in data) { portafolioData.biografia = data.biografia; delete data.biografia; }
+        if ('experiencia' in data) { portafolioData.experiencia = data.experiencia; delete data.experiencia; }
+        if ('especialidades' in data) { portafolioData.especialidades = data.especialidades; delete data.especialidades; }
+
+        // Actualizar usuario principal
         const actualizado = await this.prisma.usuarios.update({
-            where: { id_usuario: id, id_rol: 3 },
+            where: { id_usuario: id },
             data,
         });
+
+        // Actualizar o crear portafolio si se enviaron datos
+        if (Object.keys(portafolioData).length > 0) {
+            const portafolioExistente = await this.prisma.portafolios.findFirst({
+                where: { id_usuario: id }
+            });
+
+            if (portafolioExistente) {
+                await this.prisma.portafolios.update({
+                    where: { id_portafolio: portafolioExistente.id_portafolio },
+                    data: portafolioData
+                });
+            } else {
+                await this.prisma.portafolios.create({
+                    data: {
+                        ...portafolioData,
+                        id_usuario: id
+                    }
+                });
+            }
+        }
 
         const { password_hash, ...result } = actualizado;
         return result;
@@ -109,7 +147,7 @@ export class BarbersService {
         
         // Soft delete
         return await this.prisma.usuarios.update({
-            where: { id_usuario: id, id_rol: 3 },
+            where: { id_usuario: id },
             data: { estado: false },
         });
     }

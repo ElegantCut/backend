@@ -8,7 +8,10 @@ export class BarbersRepository {
     async findAll() {
         return this.prisma.usuarios.findMany({
             where: { id_rol: 3 },
-            include: { _count: { select: { reservas: true } } },
+            include: { 
+                _count: { select: { reservas: true } },
+                portafolios: true
+            },
             orderBy: { created_at: 'desc' },
         });
     }

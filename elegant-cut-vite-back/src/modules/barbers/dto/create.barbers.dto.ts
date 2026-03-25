@@ -42,4 +42,19 @@ export class CreateBarberDto {
     @IsString()
     @IsOptional()
     telefono?: string;
+
+    @ApiPropertyOptional({ description: 'Biografía para el portafolio del barbero' })
+    @IsString()
+    @IsOptional()
+    biografia?: string;
+
+    @ApiPropertyOptional({ description: 'Experiencia del barbero' })
+    @IsString()
+    @IsOptional()
+    experiencia?: string;
+
+    @ApiPropertyOptional({ description: 'Especialidades del barbero, e.g. ["Corte Clasico", "Barba"]' })
+    @IsString()
+    @IsOptional()
+    especialidades?: string;
 }
