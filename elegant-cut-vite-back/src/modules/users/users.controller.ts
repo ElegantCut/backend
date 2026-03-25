@@ -49,6 +49,30 @@ export class UsersController {
         return this.usersService.findOne(id);
     }
 
+    @ApiOperation({ summary: 'Obtener estadísticas de un usuario', description: 'Devuelve citas, promedio y puntos para la vista del perfil.' })
+    @ApiParam({ name: 'id', description: 'ID del usuario', example: 1 })
+    @ApiResponse({ status: 200, description: 'Estadísticas obtenidas existosamente.' })
+    @Get(':id/stats')
+    async getStats(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.getUserStats(id);
+    }
+
+    @ApiOperation({ summary: 'Obtener notificaciones de un usuario', description: 'Devuelve un historial de alertas sobre el estado de las citas.' })
+    @ApiParam({ name: 'id', description: 'ID del usuario', example: 1 })
+    @ApiResponse({ status: 200, description: 'Notificaciones obtenidas existosamente.' })
+    @Get(':id/notifications')
+    async getNotifications(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.getUserNotifications(id);
+    }
+
+    @ApiOperation({ summary: 'Obtener historial de citas de usuario', description: 'Devuelve citas activas y el historial de citas pasadas/canceladas.' })
+    @ApiParam({ name: 'id', description: 'ID del usuario', example: 1 })
+    @ApiResponse({ status: 200, description: 'Citas obtenidas existosamente.' })
+    @Get(':id/appointments')
+    async getAppointments(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.getUserAppointments(id);
+    }
+
     @ApiOperation({ summary: 'Actualizar datos de usuario (Admin)', description: 'Permite modificar cualquier dato de un usuario (nombre, rol, estado, etc.)' })
     @ApiParam({ name: 'id', description: 'ID del usuario a editar', example: 1 })
     @ApiResponse({ status: 200, description: 'Usuario actualizado existosamente.' })

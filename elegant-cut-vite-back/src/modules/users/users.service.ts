@@ -86,6 +86,120 @@ export class UsersService {
         return usuario;
     }
 
+    async getUserStats(id: number) {
+        // Obtenemos el usuario para su email (necesario para buscar reseñas)
+        const user = await this.prisma.usuarios.findUnique({ where: { id_usuario: id } });
+        if (!user) {
+            throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        }
+
+        // Citas realizadas (todas las reservas del usuario)
+        const citasRealizadas = await this.prisma.reservas.count({
+            where: { id_usuario: id }
+        });
+
+        // Citas pendientes (reservas del usuario en fechas futuras)
+        const citasPendientes = await this.prisma.reservas.count({
+            where: {
+                id_usuario: id,
+                fecha: { gt: new Date() }
+            }
+        });
+
+        // Calificación promedio (Busca las reseñas asocidas al email del usuario)
+        const agregaciones = await this.prisma.resenas.aggregate({
+            _avg: { calificacion: true },
+            where: { email_cliente: user.email, estado: 1 }
+        });
+
+        const calificacionPromedio = agregaciones._avg.calificacion ? Number(agregaciones._avg.calificacion.toFixed(1)) : 0;
+
+        // Puntos acumulados (simulación de 10 puntos por cita)
+        const puntosAcumulados = citasRealizadas * 10;
+
+        return {
+            citasRealizadas,
+            citasPendientes,
+            calificacionPromedio,
+            puntosAcumulados
+        };
+    }
+
+    async getUserNotifications(id: number) {
+        // Obtenemos al usuario
+        await this.findOne(id);
+
+        // Buscamos las últimas 10 reservas del usuario
+        const reservas = await this.prisma.reservas.findMany({
+            where: { id_usuario: id },
+            orderBy: { fecha: 'desc' },
+            take: 10,
+            include: {
+                estado_cita: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            }
+        });
+
+        // Formatear como array de notificaciones legibles
+        return reservas.map(reserva => {
+            const esConfirmada = reserva.estado_cita?.confirmada;
+            const estadoTexto = esConfirmada ? 'Confirmada' : 'Cancelada o Pendiente';
+            const servicio = reserva.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Cita';
+            const fechaHora = new Date(reserva.fecha).toLocaleDateString('es-ES', { 
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+            });
+
+            return {
+                id: reserva.id_reservas,
+                titulo: `Reserva ${estadoTexto}`,
+                mensaje: `Tu reserva de ${servicio} para el ${fechaHora} se encuentra ${estadoTexto.toLowerCase()}.`,
+                fecha: reserva.fecha,
+                tipo: esConfirmada ? 'success' : 'warning',
+                leida: false
+            };
+        });
+    }
+
+    async getUserAppointments(id: number) {
+        // Verificar que el usuario exista
+        await this.findOne(id);
+        
+        const hoy = new Date();
+
+        // Obtener todas las reservas del usuario
+        const reservas = await this.prisma.reservas.findMany({
+            where: { id_usuario: id },
+            orderBy: { fecha: 'desc' },
+            include: {
+                estado_cita: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                },
+                horarios: true
+            }
+        });
+
+        // Mapear los datos a un formato limpio para el frontend
+        const cleanReservas = reservas.map(r => ({
+            id: r.id_reservas,
+            fecha: r.fecha,
+            servicio: r.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Cita de Barbería',
+            precio: r.detalle_cita_servicio?.[0]?.servicios?.precio || 0,
+            barbero: 'Barbero Asignado',
+            estado: r.estado_cita?.confirmada ? 'Confirmada' : (r.estado_cita?.confirmada === false ? 'Cancelada' : 'Pendiente'),
+            esPasada: r.fecha < hoy,
+            esActiva: r.fecha >= hoy && r.estado_cita?.confirmada !== false
+        }));
+
+        // Clasificamos las citas
+        const activas = cleanReservas.filter(c => c.esActiva);
+        const historial = cleanReservas.filter(c => !c.esActiva); // pasadas o canceladas
+
+        return { activas, historial };
+    }
+
     async update(id: number, data: any) {
         await this.findOne(id); // Verifica si existe primero
         
