@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -74,17 +74,21 @@ export class AppointmentsService {
     }
 
     async update(id: number, data: any) {
-        await this.findOne(id); // Verifica si existe
+        try {
+            await this.findOne(id); // Verifica si existe
 
-        // Si mandan una fecha en string, la parseamos a Date
-        if (data.fecha) {
-            data.fecha = new Date(data.fecha);
+            // Si mandan una fecha en string, la parseamos a Date
+            if (data.fecha) {
+                data.fecha = new Date(data.fecha);
+            }
+
+            return await this.prisma.reservas.update({
+                where: { id_reservas: id },
+                data,
+                include: { estado_cita: true }
+            });
+        } catch (e: any) {
+            throw new InternalServerErrorException(e.message);
         }
-
-        return await this.prisma.reservas.update({
-            where: { id_reservas: id },
-            data,
-            include: { estado_cita: true }
-        });
     }
 }

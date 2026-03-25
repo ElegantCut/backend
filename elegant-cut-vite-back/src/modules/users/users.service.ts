@@ -93,15 +93,17 @@ export class UsersService {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
         }
 
-        // Citas realizadas (todas las reservas del usuario)
+        const condicionBusqueda = user.id_rol === 3 ? { id_empleado: id } : { id_usuario: id };
+
+        // Citas realizadas (todas las reservas del usuario o barbero)
         const citasRealizadas = await this.prisma.reservas.count({
-            where: { id_usuario: id }
+            where: condicionBusqueda
         });
 
-        // Citas pendientes (reservas del usuario en fechas futuras)
+        // Citas pendientes (reservas en fechas futuras)
         const citasPendientes = await this.prisma.reservas.count({
             where: {
-                id_usuario: id,
+                ...condicionBusqueda,
                 fecha: { gt: new Date() }
             }
         });
@@ -127,11 +129,13 @@ export class UsersService {
 
     async getUserNotifications(id: number) {
         // Obtenemos al usuario
-        await this.findOne(id);
+        const user = await this.findOne(id);
+        
+        const condicionBusqueda = user.id_rol === 3 ? { id_empleado: id } : { id_usuario: id };
 
-        // Buscamos las últimas 10 reservas del usuario
+        // Buscamos las últimas 10 reservas vinculadas al usuario o barbero
         const reservas = await this.prisma.reservas.findMany({
-            where: { id_usuario: id },
+            where: condicionBusqueda,
             orderBy: { fecha: 'desc' },
             take: 10,
             include: {
@@ -144,8 +148,18 @@ export class UsersService {
 
         // Formatear como array de notificaciones legibles
         return reservas.map(reserva => {
-            const esConfirmada = reserva.estado_cita?.confirmada;
-            const estadoTexto = esConfirmada ? 'Confirmada' : 'Cancelada o Pendiente';
+            const estadoId = reserva.id_estado_cita;
+            let estadoTexto = 'Pendiente';
+            let tipo = 'info';
+            
+            if (estadoId === 2) {
+                estadoTexto = 'Completada';
+                tipo = 'success';
+            } else if (estadoId === 3) {
+                estadoTexto = 'Cancelada';
+                tipo = 'warning';
+            }
+
             const servicio = reserva.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Cita';
             const fechaHora = new Date(reserva.fecha).toLocaleDateString('es-ES', { 
                 day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
@@ -153,10 +167,10 @@ export class UsersService {
 
             return {
                 id: reserva.id_reservas,
-                titulo: `Reserva ${estadoTexto}`,
-                mensaje: `Tu reserva de ${servicio} para el ${fechaHora} se encuentra ${estadoTexto.toLowerCase()}.`,
+                titulo: `Cita ${estadoTexto}`,
+                mensaje: `La reserva de ${servicio} para el ${fechaHora} ha sido marcada como ${estadoTexto.toUpperCase()}.`,
                 fecha: reserva.fecha,
-                tipo: esConfirmada ? 'success' : 'warning',
+                tipo: tipo,
                 leida: false
             };
         });
@@ -164,13 +178,14 @@ export class UsersService {
 
     async getUserAppointments(id: number) {
         // Verificar que el usuario exista
-        await this.findOne(id);
+        const user = await this.findOne(id);
         
         const hoy = new Date();
+        const condicionBusqueda = user.id_rol === 3 ? { id_empleado: id } : { id_usuario: id };
 
-        // Obtener todas las reservas del usuario
+        // Obtener todas las reservas vinculadas al perfil (cliente o barbero)
         const reservas = await this.prisma.reservas.findMany({
-            where: { id_usuario: id },
+            where: condicionBusqueda,
             orderBy: { fecha: 'desc' },
             include: {
                 estado_cita: true,
@@ -182,16 +197,28 @@ export class UsersService {
         });
 
         // Mapear los datos a un formato limpio para el frontend
-        const cleanReservas = reservas.map(r => ({
-            id: r.id_reservas,
-            fecha: r.fecha,
-            servicio: r.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Cita de Barbería',
-            precio: r.detalle_cita_servicio?.[0]?.servicios?.precio || 0,
-            barbero: 'Barbero Asignado',
-            estado: r.estado_cita?.confirmada ? 'Confirmada' : (r.estado_cita?.confirmada === false ? 'Cancelada' : 'Pendiente'),
-            esPasada: r.fecha < hoy,
-            esActiva: r.fecha >= hoy && r.estado_cita?.confirmada !== false
-        }));
+        const cleanReservas = reservas.map(r => {
+            const estadoId = r.id_estado_cita;
+            let estadoTexto = 'Pendiente';
+            if (estadoId === 2) estadoTexto = 'Completada';
+            if (estadoId === 3) estadoTexto = 'Cancelada';
+
+            // Es pasada si la fecha ya pasó o si ya fue completada/cancelada
+            const esPasada = r.fecha < hoy || estadoId === 2 || estadoId === 3;
+            // Es activa solo si está pendiente (1) y la fecha no ha pasado (o es de hoy sin completar)
+            const esActiva = estadoId === 1 && r.fecha >= hoy;
+
+            return {
+                id: r.id_reservas,
+                fecha: r.fecha,
+                servicio: r.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Cita de Barbería',
+                precio: r.detalle_cita_servicio?.[0]?.servicios?.precio || 0,
+                barbero: 'Asignado',
+                estado: estadoTexto,
+                esPasada,
+                esActiva
+            };
+        });
 
         // Clasificamos las citas
         const activas = cleanReservas.filter(c => c.esActiva);
