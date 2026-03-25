@@ -16,3 +16,19 @@ main()
     .finally(async () => {
         await prisma.$disconnect();
     });
+// import { Controller, Post, Body } from '@nestjs/common';
+// import { ServiceU } from 'src/modules/service_u/serviceu.controller';
+
+/*
+@Controller('service_U')
+export class ServiceUController {
+
+    constructor(private readonly serviceU: any) {
+    }
+
+    @Post()
+    async create(@Body() data: any) {
+        return this.serviceU.create(data);
+    }
+}
+*/

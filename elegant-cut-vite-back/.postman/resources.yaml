@@ -1,6 +1,8 @@
 # Use this workspace to collaborate
 workspace:
   id: da745a96-161c-4528-8a33-7f47d1d764d9
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
 cloudResources:
   collections:
     ..\postman\collections\CADENA_PRESUPUESTAL PREPRODUCCION: 6342e89a-622f-47ff-9d64-b28630659970

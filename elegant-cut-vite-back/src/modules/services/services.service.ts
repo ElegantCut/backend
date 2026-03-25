@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ServicesRepository } from './services.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CrearServicioDto } from './dto/create-servicio.dto';
@@ -56,8 +56,7 @@ export class ServicesService {
             where: { id_servicio: id },
             include: { categorias: true }
         });
-
-        if (!servicio) throw new Error(`Servicio con ID ${id} no encontrado`);
+        if (!servicio) throw new NotFoundException(`Servicio con ID ${id} no encontrado`);
         return servicio;
     }
 

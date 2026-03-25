@@ -12,10 +12,10 @@ export class PqrsRepository {
 
     async create(data: any) {
         // Adaptado al nuevo esquema de la base de datos
-        const { tipo, asunto, descripcion, id_usuario, estado } = data;
+        const { tipo_solicitud, asunto, descripcion, id_usuario, estado } = data;
         const result = await this.prisma.pqrs.create({
             data: {
-                tipo: tipo || 'Peticion', // Valor por defecto del enum pqrs_tipo si no viene
+                tipo: tipo_solicitud || 'Peticion', // Valor por defecto del enum pqrs_tipo si no viene
                 asunto,
                 descripcion,
                 estado: estado || 'Pendiente', // Valor por defecto del enum pqrs_estado

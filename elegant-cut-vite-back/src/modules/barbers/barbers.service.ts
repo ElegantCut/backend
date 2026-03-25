@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -78,7 +78,7 @@ export class BarbersService {
             }
         });
 
-        if (!barbero) throw new Error(`Barbero con ID ${id} no encontrado`);
+        if (!barbero) throw new NotFoundException(`Barbero con ID ${id} no encontrado`);
         
         const { password_hash, ...result } = barbero;
         return result;

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -69,7 +69,7 @@ export class AppointmentsService {
             }
         });
 
-        if (!cita) throw new Error(`Cita con ID ${id} no encontrada`);
+        if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         return cita;
     }
 

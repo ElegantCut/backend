@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PqrsRepository } from './pqrs.repository';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -51,7 +51,7 @@ export class PqrsService {
             }
         });
 
-        if (!pqrs) throw new Error(`PQRS con ID ${id} no encontrada`);
+        if (!pqrs) throw new NotFoundException(`PQRS con ID ${id} no encontrada`);
         return pqrs;
     }
 

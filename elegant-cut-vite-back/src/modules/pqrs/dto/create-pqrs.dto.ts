@@ -1,12 +1,11 @@
-//Este archivo es el DTO, es que  se encarga de validar los datos que se reciben en el metodo post
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator'; //importa decoradores de class-validator
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber } from 'class-validator'; //importa decoradores de class-validator
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum PqrsTipoSolicitud {
-    peticion = 'peticion',
-    queja = 'queja',
-    reclamo = 'reclamo',
-    sugerencia = 'sugerencia'
+    peticion = 'Peticion',
+    queja = 'Queja',
+    reclamo = 'Reclamo',
+    sugerencia = 'Sugerencia'
 }
 
 export enum PqrsMedioRespuesta {
@@ -16,8 +15,13 @@ export enum PqrsMedioRespuesta {
 }
 
 export class CrearPqrsDto {
+    @ApiProperty({ description: 'ID del usuario asociado a la PQRS', example: 5 })
+    @IsNumber()
+    @IsNotEmpty()
+    id_usuario: number;
+
     @ApiProperty({ description: 'Tipo de la solicitud que se está radicando', enum: PqrsTipoSolicitud, example: PqrsTipoSolicitud.queja })
-    @IsEnum(PqrsTipoSolicitud, { message: 'El tipo debe ser: peticion, queja, reclamo o sugerencia' })
+    @IsEnum(PqrsTipoSolicitud, { message: 'El tipo debe ser: Peticion, Queja, Reclamo o Sugerencia' })
     @IsNotEmpty()
     tipo_solicitud: PqrsTipoSolicitud;
 

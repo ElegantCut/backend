@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Query, Patch, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiNotFoundResponse } from '@nestjs/swagger';
 import { PqrsService } from './pqrs.service';
 import { CrearPqrsDto } from './dto/create-pqrs.dto';
 import { UpdatePqrsDto } from './dto/update-pqrs.dto';
@@ -11,6 +11,8 @@ export class PqrsController {
 
     @ApiOperation({ summary: 'Crear una nueva PQRS', description: 'Permite a clientes o visitantes registrar una Petición, Queja, Reclamo o Sugerencia.' })
     @ApiResponse({ status: 201, description: 'La solicitud se ha registrado exitosamente.' })
+    @ApiNotFoundResponse({ description: "Error al crear la pqrs" })
+
     @Post()
     async crearPqrs(@Body() crearPqrsDto: CrearPqrsDto) {
         try {
@@ -27,13 +29,14 @@ export class PqrsController {
     }
 
     @ApiOperation({ summary: 'Obtener todas las PQRS', description: 'Devuelve todas las solicitudes PQRS registradas en la base de datos (Para el panel de Admin).' })
+    @ApiResponse({ status: 200, description: "PQRS encontrada exitosamente" })
+    @ApiNotFoundResponse({ description: "No se encontro la PQRS con el ID proporcionado" })
     @Get()
     async obtenerPqrs() {
         return this.pqrsService.obtenerPqrs();
     }
 
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---
-
     @ApiOperation({ summary: 'Obtener detalle de una queja o reclamo', description: 'Devuelve toda la información de una PQRS específica incluyendo datos del usuario asociado.' })
     @ApiParam({ name: 'id', description: 'ID de la PQRS', example: 1 })
     @Get(':id')
