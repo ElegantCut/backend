@@ -96,7 +96,6 @@ model servicios {
   @@index([id_categoria], map: "fk_servicio_categoria")
 }
 
-
 model tipo_pago {
   id_tipo_pago Int     @id @default(autoincrement())
   nombre       String? @db.VarChar(70)

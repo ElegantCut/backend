@@ -21,7 +21,7 @@ async function bootstrap() {
 
   // 3. Habilitar CORS para conectar con Vite
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -42,7 +42,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`\n Servidor corriendo en: http://localhost:${port}/api`);
 }
