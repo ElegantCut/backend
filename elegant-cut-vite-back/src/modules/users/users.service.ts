@@ -54,9 +54,8 @@ export class UsersService {
     }
 
     async crearUsuario(data: CrearUsuarioDto) {
-        // Encriptar la contraseña antes de guardar el usuario
-        const hashedPassword = await this.hashPassword(data.password_hash);
-
+        // La contraseña ya viene hasheada desde auth.service.register
+        // NO volver a hashear aquí o se producirá un doble hasheo
         return await this.prisma.usuarios.create({
             data: {
                 username: data.username,
@@ -65,7 +64,7 @@ export class UsersService {
                 apellido1: data.apellido1,
                 apellido2: data.apellido2,
                 email: data.email,
-                password_hash: hashedPassword,
+                password_hash: data.password_hash,
                 telefono: data.telefono,
                 estado: data.estado !== undefined ? data.estado : true,
                 id_rol: data.id_rol !== undefined ? data.id_rol : 2,
