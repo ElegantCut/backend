@@ -53,11 +53,8 @@ export class AuthService {
     }
 
     async register(registerDto: CrearUsuarioDto) {
-        const password_hash = await this.usersService.hashPassword(registerDto.password_hash);
-
         return await this.usersService.crearUsuario({
             ...registerDto,
-            password_hash,
             id_rol: registerDto.id_rol || 2
         });
     }
@@ -92,16 +89,16 @@ export class AuthService {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // 3. Transacción: Actualizar usuario y marcar código como usado
-        // Usamos una transacción para asegurar que ambas cosas pasen o ninguna
+        // 3. Transacción: Actualizar usuarios y marcar código como usado
         return await this.prisma.$transaction(async (tx) => {
-            // Buscar el usuario por email para obtener su id (email no es @unique en Prisma)
-            const usuario = await tx.usuarios.findFirst({ where: { email } });
-            if (!usuario) throw new BadRequestException('No existe un usuario con ese correo');
+            const usuarios = await tx.usuarios.findMany({ where: { email } });
+            if (usuarios.length === 0) throw new BadRequestException('No existe un usuario con ese correo');
 
-            // Actualizar la contraseña usando la clave primaria id_usuario
-            const usuarioActualizado = await tx.usuarios.update({
-                where: { id_usuario: usuario.id_usuario },
+            // Actualizar la contraseña de TODOS los usuarios vinculados a ese correo 
+            // Esto soluciona el problema de que si tienes un Admin y un Cliente con el mismo correo, 
+            // solo actualizaba al Cliente y la del Admin quedaba con error.
+            await tx.usuarios.updateMany({
+                where: { email },
                 data: { password_hash: hashedPassword },
             });
 

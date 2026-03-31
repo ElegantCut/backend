@@ -9,7 +9,16 @@ export class BarbersService {
     constructor(private readonly barbersRepo: BarbersRepository, private readonly prisma: PrismaService) { }
 
     async getAllBarbers() {
-        return this.barbersRepo.findAll();
+        try {
+            const data = await this.prisma.usuarios.findMany({
+                where: { id_rol: 3 },
+                orderBy: { created_at: 'desc' },
+                include: { portafolios: true }
+            });
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
     }
 
     async getPublicBarbers() {
@@ -127,6 +136,18 @@ export class BarbersService {
 
         const { password_hash, ...result } = actualizado;
         return result;
+    }
+
+    async toggleStatus(id: number) {
+        const barbero = await this.findOne(id);
+        const newStatus = !barbero.estado;
+        
+        await this.prisma.usuarios.update({
+            where: { id_usuario: id },
+            data: { estado: newStatus }
+        });
+
+        return { success: true, newStatus };
     }
 
     async remove(id: number) {

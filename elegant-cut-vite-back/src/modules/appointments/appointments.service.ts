@@ -25,7 +25,67 @@ export class AppointmentsService {
         return this.appointmentsRepo.findAll();
     }
 
-    // este método es para obtener las citas que se le asignaron al barbero 
+    // Nuevo método formateado específicamente para el listado del panel de Administrador
+    async findAllAdmin() {
+        try {
+            const citas = await this.prisma.reservas.findMany({
+                include: {
+                    usuarios: true,
+                    horarios: true,
+                    detalle_cita_servicio: {
+                        include: { servicios: true }
+                    }
+                },
+                orderBy: { fecha: 'desc' }
+            });
+
+            const data = citas.map(cita => {
+                // Determinar estado textual sugerido (1=Pendiente, 2=Completada, 3=Cancelada)
+                let estadoText = 'Pendiente';
+                if (cita.id_estado_cita === 2) estadoText = 'Completada';
+                if (cita.id_estado_cita === 3) estadoText = 'Cancelada';
+
+                // Extraer el nombre del servicio principal
+                const srv = cita.detalle_cita_servicio?.[0]?.servicios;
+                const nombreServicio = srv ? srv.nombre : 'Servicio general';
+
+                // Formatear hora inicio (ej. 900 -> "9:00 AM")
+                let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
+                if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
+                const hh = horaStr.slice(0, 2);
+                const mm = horaStr.slice(2, 4);
+                const horaFormat = `${hh}:${mm}`;
+
+                return {
+                    id_reservas: cita.id_reservas,
+                    fecha: cita.fecha,
+                    hora_inicio: horaFormat,
+                    cliente: cita.usuarios ? `${cita.usuarios.prim_nombre} ${cita.usuarios.apellido1}` : 'Desconocido',
+                    servicio: nombreServicio,
+                    estado: estadoText
+                };
+            });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error("Error fetching admin appointments:", error);
+            return { success: false, data: [] };
+        }
+    }
+
+    // Nuevo método formateado específicamente para el listado del panel de Administrador
+    async changeStatusAdmin(id: number, nuevoEstado: number) {
+        try {
+            await this.prisma.reservas.update({
+                where: { id_reservas: id },
+                data: { id_estado_cita: nuevoEstado }
+            });
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false };
+        }
+    }
 
     async getAppointmentsByBarber(barberId: number) {
         return await this.prisma.reservas.findMany({

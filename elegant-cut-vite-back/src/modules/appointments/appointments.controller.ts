@@ -17,7 +17,19 @@ export class AppointmentsController {
         return this.appointmentsService.getAvailability(date, +barberId);
     }
 
-    @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas (Ideal para el dashboard admin).' })
+    @ApiOperation({ summary: 'Obtener todas las citas (Admin Dashboard)', description: 'Devuelve todas las reservas con un formato específico para la tabla del dashboard admin.' })
+    @Get('admin/all')
+    async getAllAdmin() {
+        return this.appointmentsService.findAllAdmin();
+    }
+
+    @ApiOperation({ summary: 'Cambiar el estado de una cita', description: 'Permite aprobar o cancelar una cita desde el panel de control.' })
+    @Patch('admin/:id/status')
+    async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('nuevoEstado') nuevoEstado: number) {
+        return this.appointmentsService.changeStatusAdmin(id, nuevoEstado);
+    }
+
+    @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas.' })
     @Get()
     async getAll() {
         return this.appointmentsService.getAll();

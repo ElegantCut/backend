@@ -53,9 +53,45 @@ export class UsersService {
         return this.prisma.usuarios.findMany();
     }
 
+    // --- NUEVOS MÉTODOS PARA EL DASHBOARD DE ADMIN ---
+    async deactivateClient(id: number) {
+        try {
+            await this.remove(id);
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false };
+        }
+    }
+
+    async findAllClients() {
+        try {
+            const data = await this.prisma.usuarios.findMany({
+                where: { id_rol: 2, estado: true }, // Clientes
+                orderBy: { created_at: 'desc' }
+            });
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
+    }
+
+    async findAllAdmins() {
+        try {
+            const data = await this.prisma.usuarios.findMany({
+                where: { id_rol: 1 }, // Administradores
+                orderBy: { created_at: 'desc' }
+            });
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
+    }
+
     async crearUsuario(data: CrearUsuarioDto) {
-        // La contraseña ya viene hasheada desde auth.service.register
-        // NO volver a hashear aquí o se producirá un doble hasheo
+        // Encriptar la contraseña antes de guardar el usuario (Centralizado, cubre Admin y Registro)
+        const hashedPassword = await this.hashPassword(data.password_hash);
+
         return await this.prisma.usuarios.create({
             data: {
                 username: data.username,
@@ -64,7 +100,7 @@ export class UsersService {
                 apellido1: data.apellido1,
                 apellido2: data.apellido2,
                 email: data.email,
-                password_hash: data.password_hash,
+                password_hash: hashedPassword,
                 telefono: data.telefono,
                 estado: data.estado !== undefined ? data.estado : true,
                 id_rol: data.id_rol !== undefined ? data.id_rol : 2,
