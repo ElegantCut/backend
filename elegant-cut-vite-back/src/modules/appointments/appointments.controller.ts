@@ -8,6 +8,7 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 @Controller('appointments')
 export class AppointmentsController {
     constructor(private readonly appointmentsService: AppointmentsService) { }
+    // Debug: Route user/:userId should be registered.
     // estos son los get
     @ApiOperation({ summary: 'Consultar disponibilidad', description: 'Devuelve los horarios disponibles para un barbero en una fecha específica.' })
     @ApiQuery({ name: 'date', description: 'Fecha a consultar (YYYY-MM-DD)', example: '2023-12-01' })
@@ -52,6 +53,19 @@ export class AppointmentsController {
     @Post()
     async createAppointment(@Body() CreateAppointmentDto: CreateAppointmentDto) {
         return this.appointmentsService.createAppointment(CreateAppointmentDto);
+    }
+
+    @ApiOperation({ summary: 'Obtener todas las citas por usuario', description: 'Devuelve la lista de citas realizadas por un usuario específico.' })
+    @ApiParam({ name: 'userId', description: 'ID del usuario', example: '1' })
+    @Get('user/:userId')
+    async getByUser(@Param('userId', ParseIntPipe) userId: number) {
+        return this.appointmentsService.getAppointmentsByUser(userId);
+    }
+
+    @ApiOperation({ summary: 'Obtener todos los bloques de horarios', description: 'Devuelve la lista de bloques de tiempo (horarios) disponibles en la base de datos.' })
+    @Get('horarios')
+    async getHorarios() {
+        return this.appointmentsService.getHorarios();
     }
 
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---

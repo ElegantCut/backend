@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Injectable()
@@ -104,12 +104,38 @@ export class AppointmentsService {
     }
 
     async createAppointment(datos: CreateAppointmentDto) {
-        return await this.prisma.reservas.create({
-            data: {
-                ...datos,
-                fecha: new Date(datos.fecha),
-            },
-        })
+        const id_servicio = Number(datos.id_servicio);
+        const reservaData = {
+            fecha: new Date(datos.fecha),
+            observaciones: datos.observaciones,
+            id_usuario: Number(datos.id_usuario),
+            id_empleado: Number(datos.id_empleado),
+            id_estado_cita: Number(datos.id_estado_cita),
+            id_horarios: Number(datos.id_horarios),
+        };
+        
+        return await this.prisma.$transaction(async (tx) => {
+            // 1. Crear la reserva
+            const reserva = await tx.reservas.create({
+                data: reservaData,
+            });
+
+            // 2. Crear el detalle con el servicio
+            await tx.detalle_cita_servicio.create({
+                data: {
+                    id_reservas: reserva.id_reservas,
+                    id_servicio: id_servicio
+                }
+            });
+
+            return reserva;
+        });
+    }
+
+    async getHorarios() {
+        return await this.prisma.horarios.findMany({
+            orderBy: { hora_inicio: 'asc' }
+        });
     }
 
     // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
@@ -131,6 +157,28 @@ export class AppointmentsService {
 
         if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         return cita;
+    }
+
+    async getAppointmentsByUser(userId: number) {
+        try {
+            const numericUserId = Number(userId);
+            const citas = await this.prisma.reservas.findMany({
+                where: { id_usuario: numericUserId },
+                include: {
+                    horarios: true,
+                    estado_cita: true,
+                    detalle_cita_servicio: {
+                        include: { servicios: true }
+                    }
+                },
+                orderBy: { fecha: 'desc' }
+            });
+
+            return { success: true, data: citas };
+        } catch (error) {
+            console.error("Error fetching user appointments:", error);
+            return { success: false, data: [] };
+        }
     }
 
     async update(id: number, data: any) {

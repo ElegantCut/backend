@@ -31,4 +31,9 @@ export class CreateAppointmentDto {
     @IsNumber()
     @IsNotEmpty()
     id_horarios: number; // El bloque de tiempo elegido
+
+    @ApiProperty({ description: 'ID del servicio seleccionado', example: 1 })
+    @IsNumber()
+    @IsNotEmpty()
+    id_servicio: number; // El servicio (corte, barba, etc.)
 }
