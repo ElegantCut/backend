@@ -114,22 +114,64 @@ export class AppointmentsService {
             id_horarios: Number(datos.id_horarios),
         };
         
-        return await this.prisma.$transaction(async (tx) => {
+        const reserva = await this.prisma.$transaction(async (tx) => {
             // 1. Crear la reserva
-            const reserva = await tx.reservas.create({
+            const reservaResult = await tx.reservas.create({
                 data: reservaData,
             });
 
             // 2. Crear el detalle con el servicio
             await tx.detalle_cita_servicio.create({
                 data: {
-                    id_reservas: reserva.id_reservas,
+                    id_reservas: reservaResult.id_reservas,
                     id_servicio: id_servicio
                 }
             });
 
-            return reserva;
+            return reservaResult;
         });
+
+        // --- INTEGRACIÓN CON n8n ---
+        try {
+            const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita'; 
+            
+            const reservaAny = reserva as any;
+            const datosAny = datos as any;
+
+            // Buscar el email del cliente en la BD como respaldo
+            const cliente = await this.prisma.usuarios.findUnique({
+                where: { id_usuario: Number(datosAny.id_usuario) },
+                select: { email: true, prim_nombre: true, apellido1: true }
+            });
+
+            // Priorizar lo que el cliente escribió en el formulario, sino usar BD
+            const emailFinal = datosAny.email_contacto || cliente?.email || '';
+            const nombreFinal = datosAny.nombre_contacto || `${cliente?.prim_nombre ?? ''} ${cliente?.apellido1 ?? ''}`.trim() || 'Cliente';
+
+            const payload = {
+                evento: 'NUEVA_CITA',
+                id_reserva: reservaAny.id_reservas,
+                cliente_id: datosAny.id_usuario,
+                email_cliente: emailFinal,
+                nombre_cliente: nombreFinal,
+                fecha: datosAny.fecha,
+                observaciones: datosAny.observaciones
+            };
+            
+            console.log('PAYLOAD PARA N8N:', payload);
+
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error('Error enviando a n8n:', err));
+            
+            console.log('🚀 Evento de cita enviado a n8n');
+        } catch (error) {
+            console.warn('No se pudo enviar a n8n:', error);
+        }
+
+        return reserva;
     }
 
     async getHorarios() {
@@ -191,8 +233,53 @@ export class AppointmentsService {
 
         return await this.prisma.reservas.update({
             where: { id_reservas: id },
-            data,
+            data: data,
             include: { estado_cita: true }
         });
     }
+
+    // --- MÉTODO PARA RECORDATORIOS (n8n) ---
+    async getTomorrowReminders() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const dayAfterTomorrow = new Date(tomorrow);
+        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+        const citas = await this.prisma.reservas.findMany({
+            where: {
+                fecha: {
+                    gte: tomorrow,
+                    lt: dayAfterTomorrow
+                },
+                id_estado_cita: 1 // Solo pendientes
+            },
+            include: {
+                usuarios: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            }
+        });
+
+        return citas.map(cita => {
+             // Formatear hora inicio (900 -> "9:00")
+             let horaStr = cita.horarios?.hora_inicio?.toString() || '0000';
+             if (horaStr.length === 3) horaStr = '0' + horaStr; 
+             const hh = horaStr.slice(0, 2);
+             const mm = horaStr.slice(2, 4);
+             
+             return {
+                 id_reserva: cita.id_reservas,
+                 cliente_nombre: `${cita.usuarios?.prim_nombre ?? ''} ${cita.usuarios?.apellido1 ?? ''}`.trim() || 'Cliente',
+                 cliente_email: cita.usuarios?.email || '',
+                 fecha: cita.fecha.toISOString().split('T')[0],
+                 hora: `${hh}:${mm}`,
+                 servicio: cita.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Servicio Barbería'
+             };
+        });
+    }
 }
+

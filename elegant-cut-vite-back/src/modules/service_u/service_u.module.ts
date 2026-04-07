@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
-import { PqrsService } from '../pqrs/pqrs.service';
-import { PqrsRepository } from '../pqrs/pqrs.repository';
-import { PqrsController } from '../pqrs/pqrs.controller';
-import { EmailModule } from '../email/email.module';
+import { ServiceUService } from './serviceu.service';
+import { ServiceUController } from './serviceu.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 
-
 @Module({
-    imports: [EmailModule, PrismaModule],
-    controllers: [PqrsController],
-    providers: [PqrsService, PqrsRepository],
+    imports: [PrismaModule],
+    controllers: [ServiceUController],
+    providers: [ServiceUService],
+    exports: [ServiceUService],
 })
-export class PqrsModule { }
+export class ServiceUModule { }

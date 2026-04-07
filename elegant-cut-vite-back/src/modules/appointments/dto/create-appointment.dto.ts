@@ -12,6 +12,16 @@ export class CreateAppointmentDto {
     @IsOptional()
     observaciones?: string;
 
+    @ApiPropertyOptional({ description: 'Email directo del contacto ingresado en el formulario', example: 'tucorreo@ejemplo.com' })
+    @IsString()
+    @IsOptional()
+    email_contacto?: string;
+
+    @ApiPropertyOptional({ description: 'Nombre directo del contacto ingresado en el formulario', example: 'Juan Pérez' })
+    @IsString()
+    @IsOptional()
+    nombre_contacto?: string;
+
     @ApiProperty({ description: 'ID del usuario (cliente) que reserva', example: 1 })
     @IsNumber()
     @IsNotEmpty()

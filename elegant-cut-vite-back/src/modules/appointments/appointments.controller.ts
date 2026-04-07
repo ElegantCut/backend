@@ -68,7 +68,11 @@ export class AppointmentsController {
         return this.appointmentsService.getHorarios();
     }
 
-    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+    @ApiOperation({ summary: 'Obtener recordatorios para mañana', description: 'Devuelve una lista simplificada de citas de mañana para n8n.' })
+    @Get('reminders/tomorrow')
+    async getRemindersTomorrow() {
+        return this.appointmentsService.getTomorrowReminders();
+    }
 
     @ApiOperation({ summary: 'Obtener detalle de una cita', description: 'Devuelve toda la información de una reserva específica incluyendo usuario, barbero y servicios afines.' })
     @ApiParam({ name: 'id', description: 'ID de la reserva', example: 1 })

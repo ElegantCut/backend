@@ -12,6 +12,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { EmailModule } from './modules/email/email.module';
 import { PortabarberoModule } from './portabarbero/portabarbero.module';
+import { ServiceUModule } from './modules/service_u/service_u.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
@@ -35,6 +36,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     EmailModule,
     PortabarberoModule,
     UploadsModule,
+    ServiceUModule,
   ],
 })
 export class AppModule { }
