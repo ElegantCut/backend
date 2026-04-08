@@ -26,8 +26,8 @@ export class AppointmentsController {
 
     @ApiOperation({ summary: 'Cambiar el estado de una cita', description: 'Permite aprobar o cancelar una cita desde el panel de control.' })
     @Patch('admin/:id/status')
-    async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('nuevoEstado') nuevoEstado: number) {
-        return this.appointmentsService.changeStatusAdmin(id, nuevoEstado);
+    async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('nuevoEstado') nuevoEstado: any) {
+        return this.appointmentsService.changeStatusAdmin(id, Number(nuevoEstado));
     }
 
     @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas.' })

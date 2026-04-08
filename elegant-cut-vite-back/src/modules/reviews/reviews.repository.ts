@@ -6,21 +6,33 @@ export class ReviewsRepository {
     constructor(private prisma: PrismaService) { }
 
     async findAllApproved() {
-        // FIXME: La tabla 'resenas' ya no existe en la base de datos tras la actualización.
-        // return this.prisma.resenas.findMany({
-        //     where: { estado: 1 },
-        //     orderBy: { fecha_resena: 'desc' },
-        // });
-        return [];
+        return this.prisma.resenas.findMany({
+            where: { estado: 1 },
+            include: {
+                barbero: {
+                    select: {
+                        prim_nombre: true,
+                        apellido1: true
+                    }
+                }
+            },
+            orderBy: { fecha_resena: 'desc' },
+        });
     }
 
     async create(data: any) {
-        // FIXME: La tabla 'resenas' ya no existe en la base de datos tras la actualización.
-        // const { nombre_cliente, email_cliente, calificacion, comentario } = data;
-        // const result = await this.prisma.resenas.create({
-        //     data: { nombre_cliente, email_cliente, calificacion, comentario },
-        // });
-        // return result.id_resena;
-        return null;
+        console.log('REPOSITORY: Intentando crear reseña con data:', data);
+        const { nombre_cliente, email_cliente, calificacion, comentario, id_barbero } = data;
+        const result = await this.prisma.resenas.create({
+            data: { 
+                nombre_cliente, 
+                email_cliente, 
+                calificacion: Number(calificacion), 
+                comentario,
+                id_barbero: (id_barbero && !isNaN(Number(id_barbero))) ? Number(id_barbero) : null,
+                estado: 1 // Forzamos estado activo para que sea visible de inmediato
+            },
+        });
+        return result;
     }
 }

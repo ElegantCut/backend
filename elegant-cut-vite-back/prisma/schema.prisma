@@ -122,6 +122,7 @@ model usuarios {
   reservas           reservas[]
   rol                rol                  @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
   barberos_servicios barberos_servicios[]
+  resenas_recibidas  resenas[]           @relation("BarberoResenas")
 
   @@index([id_rol], map: "fk_rol_usuario")
 }
@@ -163,6 +164,10 @@ model resenas {
   comentario     String    @db.Text
   fecha_resena   DateTime? @default(now()) @db.DateTime(0)
   estado         Int?      @default(1) @db.TinyInt
+  id_barbero     Int?
+  barbero        usuarios? @relation("BarberoResenas", fields: [id_barbero], references: [id_usuario], onDelete: SetNull, onUpdate: Restrict)
+
+  @@index([id_barbero], map: "idx_resena_barbero")
 }
 
 model barberos_servicios {

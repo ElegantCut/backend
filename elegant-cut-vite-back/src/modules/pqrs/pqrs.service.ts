@@ -63,4 +63,33 @@ export class PqrsService {
             data,
         });
     }
+
+    async findByRadicado(radicado: string) {
+        // Formato esperado: PQRS-{ID}-{AÑO}
+        const parts = radicado.split('-');
+        if (parts.length < 2 || parts[0].toUpperCase() !== 'PQRS') {
+            return { success: false, error: 'Formato de radicado inválido' };
+        }
+        
+        // El ID es la segunda parte del radicado
+        const id = parseInt(parts[1], 10);
+        if (isNaN(id)) {
+            return { success: false, error: 'ID de radicado inválido' };
+        }
+
+        const pqrs = await this.prisma.pqrs.findUnique({
+            where: { id_pqrs: id },
+            select: {
+                estado: true,
+                fecha_creacion: true,
+                respuesta_admin: true
+            }
+        });
+
+        if (!pqrs) {
+            return { success: false, error: 'No se encontró la PQRS' };
+        }
+
+        return { success: true, data: pqrs };
+    }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Delete, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 
@@ -17,5 +17,11 @@ export class ClientsController {
     @Delete(':id')
     async deactivateClient(@Param('id', ParseIntPipe) id: number) {
         return this.usersService.deactivateClient(id);
+    }
+
+    @ApiOperation({ summary: 'Activar cliente', description: 'Activa la cuenta de un cliente previamente desactivado.' })
+    @Patch(':id/activate')
+    async activateClient(@Param('id', ParseIntPipe) id: number) {
+        return this.usersService.activateClient(id);
     }
 }

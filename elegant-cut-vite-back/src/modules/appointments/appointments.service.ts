@@ -76,14 +76,24 @@ export class AppointmentsService {
     // Nuevo método formateado específicamente para el listado del panel de Administrador
     async changeStatusAdmin(id: number, nuevoEstado: number) {
         try {
-            await this.prisma.reservas.update({
+            console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
+            
+            const updated = await this.prisma.reservas.update({
                 where: { id_reservas: id },
                 data: { id_estado_cita: nuevoEstado }
             });
-            return { success: true };
+
+            return { 
+                success: true, 
+                message: `Cita ${id} actualizada con éxito`,
+                data: updated 
+            };
         } catch (error) {
-            console.error(error);
-            return { success: false };
+            console.error(`[Admin Error] Falló actualización de cita ${id}:`, error.message);
+            return { 
+                success: false, 
+                message: 'No se pudo actualizar la cita. Verifique que el ID sea correcto.' 
+            };
         }
     }
 

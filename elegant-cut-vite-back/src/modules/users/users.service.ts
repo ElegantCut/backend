@@ -54,9 +54,22 @@ export class UsersService {
     }
 
     // --- NUEVOS MÉTODOS PARA EL DASHBOARD DE ADMIN ---
+    async activateClient(id: number) {
+        try {
+            await this.prisma.usuarios.update({
+                where: { id_usuario: id },
+                data: { estado: true }
+            });
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false };
+        }
+    }
+
     async deactivateClient(id: number) {
         try {
-            await this.remove(id);
+            await this.remove(id); // remove() ya pone el estado en false
             return { success: true };
         } catch (error) {
             console.error(error);
@@ -67,7 +80,7 @@ export class UsersService {
     async findAllClients() {
         try {
             const data = await this.prisma.usuarios.findMany({
-                where: { id_rol: 2, estado: true }, // Clientes
+                where: { id_rol: 2 }, // Clientes (todos, activos e inactivos)
                 orderBy: { created_at: 'desc' }
             });
             return { success: true, data };
