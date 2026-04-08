@@ -8,7 +8,6 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +31,9 @@ export class AuthService {
 
         const payload = {
             id: user.id_usuario,
+            id_usuario: user.id_usuario,
             username: user.username,
+            email: user.email,
             name: `${user.prim_nombre} ${user.apellido1}`,
             role: role,
             id_rol: user.id_rol,
@@ -44,9 +45,12 @@ export class AuthService {
             message: 'Login exitoso',
             token: this.jwtService.sign(payload),
             user: {
+                id_usuario: user.id_usuario,
                 username: user.username,
+                email: user.email,
                 name: `${user.prim_nombre} ${user.apellido1}`,
                 role: role,
+                id_rol: user.id_rol,
                 userId: user.id_usuario,
             },
         };
@@ -158,10 +162,12 @@ export class AuthService {
             message: 'Token validado exitosamente',
             user: {
                 id_usuario: user.id_usuario,
+                username: user.username,
                 email: user.email,
                 id_rol: user.id_rol,
-
-
+                role: user.role,
+                name: user.name,
+                userId: user.id_usuario
             }
         }
     }
