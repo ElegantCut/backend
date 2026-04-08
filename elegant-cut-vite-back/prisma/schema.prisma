@@ -103,25 +103,27 @@ model tipo_pago {
 }
 
 model usuarios {
-  id_usuario         Int                  @id @default(autoincrement())
-  username           String?              @unique(map: "username") @db.VarChar(50)
-  prim_nombre        String               @db.VarChar(70)
-  seg_nombre         String?              @db.VarChar(70)
-  apellido1          String               @db.VarChar(70)
-  apellido2          String?              @db.VarChar(70)
-  email              String               @db.VarChar(70)
-  password_hash      String?              @db.VarChar(255)
-  telefono           String?              @db.VarChar(20)
-  estado             Boolean              @default(true)
-  id_rol             Int
-  created_at         DateTime             @default(now()) @db.Timestamp(0)
-  updated_at         DateTime             @default(now()) @db.Timestamp(0)
-  foto_perfil        String?              @db.VarChar(255)
-  portafolios        portafolios[]
-  pqrs               pqrs[]
-  reservas           reservas[]
-  rol                rol                  @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
-  barberos_servicios barberos_servicios[]
+  id_usuario                           Int                  @id @default(autoincrement())
+  username                             String?              @unique(map: "username") @db.VarChar(50)
+  prim_nombre                          String               @db.VarChar(70)
+  seg_nombre                           String?              @db.VarChar(70)
+  apellido1                            String               @db.VarChar(70)
+  apellido2                            String?              @db.VarChar(70)
+  email                                String               @db.VarChar(70)
+  password_hash                        String?              @db.VarChar(255)
+  telefono                             String?              @db.VarChar(20)
+  estado                               Boolean              @default(true)
+  id_rol                               Int
+  created_at                           DateTime             @default(now()) @db.Timestamp(0)
+  updated_at                           DateTime             @default(now()) @db.Timestamp(0)
+  foto_perfil                          String?              @db.VarChar(255)
+  barberos_servicios                   barberos_servicios[]
+  portafolios                          portafolios?
+  pqrs                                 pqrs[]
+  resenas_resenas_id_clienteTousuarios resenas[]            @relation("resenas_id_clienteTousuarios")
+  resenas_recibidas                    resenas[]            @relation("ResenasBarbero")
+  reservas                             reservas[]
+  rol                                  rol                  @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
   @@index([id_rol], map: "fk_rol_usuario")
 }
@@ -142,12 +144,10 @@ model pqrs {
 
 model portafolios {
   id_portafolio    Int      @id @default(autoincrement())
-  id_usuario       Int
+  id_usuario       Int      @unique(map: "id_usuario_2")
   biografia        String?  @db.Text
   experiencia      String?  @db.VarChar(100)
   especialidades   String?  @db.LongText
-  calificacion     Decimal? @default(5.0) @db.Decimal(2, 1)
-  rese_as_count    Int?     @default(0) @map("reseñas_count")
   instagram        String?  @db.VarChar(100)
   fotos_portafolio String?  @db.LongText
   usuarios         usuarios @relation(fields: [id_usuario], references: [id_usuario], onUpdate: Restrict, map: "portafolios_ibfk_1")
@@ -156,13 +156,18 @@ model portafolios {
 }
 
 model resenas {
-  id_resena      Int       @id @default(autoincrement())
-  nombre_cliente String    @db.VarChar(100)
-  email_cliente  String    @db.VarChar(100)
-  calificacion   Int
-  comentario     String    @db.Text
-  fecha_resena   DateTime? @default(now()) @db.DateTime(0)
-  estado         Int?      @default(1) @db.TinyInt
+  id_resena                             Int       @id @default(autoincrement())
+  calificacion                          Int
+  comentario                            String    @db.Text
+  fecha_resena                          DateTime? @default(now()) @db.DateTime(0)
+  estado                                Int?      @default(1) @db.TinyInt
+  id_barbero                            Int?
+  id_cliente                            Int?
+  usuarios_resenas_id_clienteTousuarios usuarios? @relation("resenas_id_clienteTousuarios", fields: [id_cliente], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_resena_cliente")
+  barbero                               usuarios? @relation("ResenasBarbero", fields: [id_barbero], references: [id_usuario], onUpdate: Restrict, map: "fk_resenas_barbero")
+
+  @@index([id_cliente], map: "fk_resena_cliente")
+  @@index([id_barbero], map: "idx_resena_barbero")
 }
 
 model barberos_servicios {

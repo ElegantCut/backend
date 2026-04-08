@@ -17,15 +17,14 @@ export class BarbersRepository {
     }
 
     async findActive() {
-        return this.prisma.usuarios.findMany({
+        return (this.prisma.usuarios as any).findMany({
             where: { id_rol: 3, estado: true },
-            select: {
-                id_usuario: true,
-                prim_nombre: true,
-                seg_nombre: true,
-                apellido1: true,
-                apellido2: true,
-                foto_perfil: true,
+            include: {
+                portafolios: true,
+                resenas_recibidas: {
+                    where: { estado: 1 },
+                    select: { calificacion: true }
+                }
             },
             orderBy: { prim_nombre: 'asc' },
         });

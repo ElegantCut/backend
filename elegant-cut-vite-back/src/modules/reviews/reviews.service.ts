@@ -17,17 +17,52 @@ export class ReviewsService {
     //Este es de prisma RECORDAR
 
     async obtenerResenas() {
-        return this.prisma.resenas.findMany({ orderBy: { fecha_resena: 'desc' } });
+        return this.prisma.resenas.findMany({
+            where: { estado: 1 },
+            orderBy: { fecha_resena: 'desc' },
+            include: {
+                barbero: {
+                    select: {
+                        id_usuario: true,
+                        prim_nombre: true,
+                        apellido1: true
+                    }
+                },
+                usuarios_resenas_id_clienteTousuarios: {
+                    select: {
+                        prim_nombre: true,
+                        apellido1: true
+                    }
+                }
+            }
+        });
     }
 
     async findAllAdmin(status?: string) {
         const where: any = {};
         if (status === 'approved') where.estado = 1;
         if (status === 'spam') where.estado = 0;
-        
+
         return this.prisma.resenas.findMany({
             where,
-            orderBy: { fecha_resena: 'desc' }
+            orderBy: { fecha_resena: 'desc' },
+            include: {
+                barbero: {
+                    select: {
+                        id_usuario: true,
+                        prim_nombre: true,
+                        apellido1: true
+                    }
+                },
+                usuarios_resenas_id_clienteTousuarios: {
+                    select: {
+                        username: true,
+                        prim_nombre: true,
+                        apellido1: true,
+                        email: true
+                    }
+                }
+            }
         });
     }
 
