@@ -15,6 +15,12 @@ export class ReviewsController {
         return this.reviewsService.obtenerResenas();
     }
 
+    @ApiOperation({ summary: 'Obtener reseñas por barbero', description: 'Devuelve las reseñas aprobadas para un barbero específico.' })
+    @Get('barber/:id')
+    async getBarberReviews(@Param('id', ParseIntPipe) id: number) {
+        return this.reviewsService.findBarberReviews(id);
+    }
+
     @ApiOperation({ summary: 'Obtener reseñas para Admin', description: 'Listado completo para el panel de administración, opcionalmente filtrado por estado (approved/spam)' })
     @Get('admin/all')
     async getAdminReviews(@Query('status') status: string) {
@@ -27,7 +33,12 @@ export class ReviewsController {
     @ApiResponse({ status: 201, description: 'Reseña creada exitosamente.' })
     @Post()
     async create(@Body() data: any) {
-        return this.reviewsService.create(data);
+        try {
+            return await this.reviewsService.create(data);
+        } catch (error) {
+            console.error('ERROR CREANDO RESEÑA:', error);
+            throw error; // Dejar que Nest lo maneje pero ya lo logueamos en el contenedor
+        }
     }
 
     // --- MÉTODOS DE ACCIÓN ADMINISTRATIVA ---
