@@ -2,13 +2,12 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../../modules/users/users.service';
 import { EmailService } from '../../modules/email/email.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +21,11 @@ export class AuthService {
     async login(loginDto: LoginDto) {
         const { username, contrasena } = loginDto;
         const user = await this.usersService.findOneByUsername(username);
+        
+        // Validar si el usuario está activo
+        if (!user.estado) {
+            throw new UnauthorizedException('Tu cuenta está desactivada. Por favor, contacta al administrador.');
+        }
 
         const isMatch = await this.usersService.comparePassword(contrasena, user.password_hash ?? '');
         if (!isMatch) throw new UnauthorizedException('Contraseña incorrecta');
@@ -32,7 +36,9 @@ export class AuthService {
 
         const payload = {
             id: user.id_usuario,
+            id_usuario: user.id_usuario,
             username: user.username,
+            email: user.email,
             name: `${user.prim_nombre} ${user.apellido1}`,
             role: role,
             id_rol: user.id_rol,
@@ -44,9 +50,12 @@ export class AuthService {
             message: 'Login exitoso',
             token: this.jwtService.sign(payload),
             user: {
+                id_usuario: user.id_usuario,
                 username: user.username,
+                email: user.email,
                 name: `${user.prim_nombre} ${user.apellido1}`,
                 role: role,
+                id_rol: user.id_rol,
                 userId: user.id_usuario,
             },
         };
@@ -94,15 +103,11 @@ export class AuthService {
             const usuarios = await tx.usuarios.findMany({ where: { email } });
             if (usuarios.length === 0) throw new BadRequestException('No existe un usuario con ese correo');
 
-            // Actualizar la contraseña de TODOS los usuarios vinculados a ese correo 
-            // Esto soluciona el problema de que si tienes un Admin y un Cliente con el mismo correo, 
-            // solo actualizaba al Cliente y la del Admin quedaba con error.
             await tx.usuarios.updateMany({
                 where: { email },
                 data: { password_hash: hashedPassword },
             });
 
-            // Marcar el código como utilizado para que no se pueda reusar
             await tx.codigos_verificacion.update({
                 where: { id: verificacion.id },
                 data: { usado: true },
@@ -115,23 +120,20 @@ export class AuthService {
         });
     }
 
-    /**
-     * Paso 1 del flujo: el usuario pide un código para recuperar su contraseña.
-     * Genera el código, lo guarda en DB y lo envía al correo.
-     */
+   
+    
     async solicitarRecuperacion(email: string) {
-        // 1. Verificar que el usuario exista
+       
         const usuario = await this.prisma.usuarios.findFirst({ where: { email } });
 
         if (!usuario) {
-            // Por seguridad devolvemos siempre el mismo mensaje (no revelamos si el email existe)
+           
             return { message: 'Si el correo existe en nuestro sistema, recibirás un código.' };
         }
 
-        // 2. Generar código aleatorio de 6 dígitos
         const codigoSecreto = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 3. Definir expiración: 15 minutos desde ahora
+      
         const fechaExpiracion = new Date();
         fechaExpiracion.setMinutes(fechaExpiracion.getMinutes() + 15);
 
@@ -146,7 +148,7 @@ export class AuthService {
             },
         });
 
-        //  Enviar el código por correo usando el EmailService existente
+        
         await this.emailService.sendVerificationCode(email, codigoSecreto);
 
         return { message: 'Se ha enviado un código a tu correo.' };
@@ -158,10 +160,12 @@ export class AuthService {
             message: 'Token validado exitosamente',
             user: {
                 id_usuario: user.id_usuario,
+                username: user.username,
                 email: user.email,
                 id_rol: user.id_rol,
-
-
+                role: user.role,
+                name: user.name,
+                userId: user.id_usuario
             }
         }
     }

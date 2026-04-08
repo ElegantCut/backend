@@ -7,20 +7,20 @@ export class UsersRepository {
 
     async findByUsername(username: string) {
         return this.prisma.usuarios.findFirst({
-            where: { username, estado: true },
+            where: { username },
             include: { rol: true },
         });
     }
 
     async findByEmail(email: string) {
         return this.prisma.usuarios.findFirst({
-            where: { email, estado: true },
+            where: { email },
         });
     }
 
     async findById(id: number) {
         return this.prisma.usuarios.findFirst({
-            where: { id_usuario: id, estado: true },
+            where: { id_usuario: id },
             include: { rol: true },
         });
     }
