@@ -34,6 +34,7 @@ export class AuthController {
             path: '/',
             maxAge: 24 * 60 * 60 * 1000,
         });
+        delete result.token;
         return result;
     }
 

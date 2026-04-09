@@ -150,6 +150,8 @@ model portafolios {
   especialidades   String?  @db.LongText
   instagram        String?  @db.VarChar(100)
   fotos_portafolio String?  @db.LongText
+  calificacion     Decimal? @db.Decimal(3, 2)
+  rese_as_count    Int?     @default(0)
   usuarios         usuarios @relation(fields: [id_usuario], references: [id_usuario], onUpdate: Restrict, map: "portafolios_ibfk_1")
 
   @@index([id_usuario], map: "id_usuario")
