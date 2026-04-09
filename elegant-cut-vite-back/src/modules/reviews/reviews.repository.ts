@@ -16,6 +16,11 @@ export class ReviewsRepository {
                         prim_nombre: true,
                         apellido1: true
                     }
+                },
+                usuarios_resenas_id_clienteTousuarios: {
+                    select: {
+                        prim_nombre: true
+                    }
                 }
             }
         });
@@ -23,7 +28,7 @@ export class ReviewsRepository {
 
     async create(data: any) {
         const { calificacion, comentario, id_barbero, id_cliente } = data;
-        const result = await (this.prisma.resenas as any).create({
+        const result = await this.prisma.resenas.create({
             data: { 
                 id_cliente: id_cliente ? Number(id_cliente) : null,
                 calificacion: Number(calificacion), 

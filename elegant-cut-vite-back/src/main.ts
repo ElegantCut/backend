@@ -3,13 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // 1. Prefijo global para todas las rutas
-  app.use(cookieParser());
+  const cookieHandler = (cookieParser as any).default || cookieParser;
+  app.use(typeof cookieHandler === 'function' ? cookieHandler() : (cookieParser as any)());
 
   app.setGlobalPrefix('api');
 
