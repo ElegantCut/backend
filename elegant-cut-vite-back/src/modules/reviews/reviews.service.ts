@@ -69,37 +69,17 @@ export class ReviewsService {
     //Este es de prisma RECORDAR
 
     async obtenerResenas() {
-<<<<<<< HEAD
-        return this.prisma.resenas.findMany({
-            where: { estado: 1 },
-            orderBy: { fecha_resena: 'desc' },
-            include: {
-                barbero: {
-                    select: {
-                        id_usuario: true,
-                        prim_nombre: true,
-                        apellido1: true
-                    }
-                },
-                usuarios_resenas_id_clienteTousuarios: {
-                    select: {
-=======
         return this.prisma.resenas.findMany({ 
             where: { estado: 1 },
+            orderBy: { fecha_resena: 'desc' }, 
             include: {
                 barbero: {
                     select: {
->>>>>>> 932e484e87f574847ae91db0035dd8d781dc9847
                         prim_nombre: true,
                         apellido1: true
                     }
                 }
-<<<<<<< HEAD
             }
-=======
-            },
-            orderBy: { fecha_resena: 'desc' } 
->>>>>>> 932e484e87f574847ae91db0035dd8d781dc9847
         });
     }
 
@@ -110,7 +90,6 @@ export class ReviewsService {
 
         return this.prisma.resenas.findMany({
             where,
-<<<<<<< HEAD
             orderBy: { fecha_resena: 'desc' },
             include: {
                 barbero: {
@@ -129,17 +108,6 @@ export class ReviewsService {
                     }
                 }
             }
-=======
-            include: {
-                barbero: {
-                    select: {
-                        prim_nombre: true,
-                        apellido1: true
-                    }
-                }
-            },
-            orderBy: { fecha_resena: 'desc' }
->>>>>>> 932e484e87f574847ae91db0035dd8d781dc9847
         });
     }
 
