@@ -33,18 +33,6 @@ export class CreatePortaDto {
     @IsOptional()
     especialidades?: string[];
 
-    @ApiPropertyOptional({ description: 'Calificación promedio obtenida. Máx 5.0', example: 4.8 })
-    @IsNumber({ maxDecimalPlaces: 1 }) // Coincide con DECIMAL(2,1)
-    @IsOptional()
-    @Min(0)
-    @Max(9.9)
-    calificacion?: number;
-
-    @ApiPropertyOptional({ description: 'Cantidad total de reseñas recibidas', example: 120 })
-    @IsInt()
-    @IsOptional()
-    reseñas_count?: number; // Ajustado con 'ñ' para match exacto con SQL
-
     @ApiPropertyOptional({ description: 'Usuario o link a Instagram del barbero', example: '@barber_elegant' })
     @IsString()
     @IsOptional()

@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Put, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Put, UsePipes, ValidationPipe, Res } from '@nestjs/common';
+import type { Response } from 'express'; // Importamos Response para poder trabajar con las cookies
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -24,8 +25,17 @@ export class AuthController {
     @ApiResponse({ status: 201, description: 'Inicio de sesión exitoso, retorna el token.' })
     @ApiResponse({ status: 401, description: 'Credenciales inválidas.' })
     @Post('login')
-    async login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
+    async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+        const result = await this.authService.login(loginDto);
+        res.cookie('jwt', result.token, {
+            httpOnly: true,
+            secure: false, // Debe ser false para http://localhost
+            sameSite: 'lax', 
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        const { token, ...data } = result;
+        return data;
     }
 
     @ApiOperation({ summary: 'Registrar nuevo usuario', description: 'Registra a un nuevo usuario cliente en la plataforma.' })
@@ -57,6 +67,13 @@ export class AuthController {
     @Post('forgot-password')
     async forgotPassword(@Body('email') email: string) {
         return this.authService.solicitarRecuperacion(email);
+    }
+
+    @ApiOperation({ summary: 'Cerrar Sesión', description: 'Elimina la cookie de autenticación del usuario.' })
+    @Post('logout')
+    async logout(@Res({ passthrough: true }) res: Response) {
+        res.clearCookie('jwt');
+        return { success: true, message: 'Sesión cerrada correctamente' };
     }
 
 }

@@ -1,0 +1,28 @@
+# ============================================
+# DOCKERFILE.DEV - Backend (NestJS) - Dev Only
+# Optimizado para desarrollo: sin npm run build
+# ============================================
+FROM node:20-alpine
+
+# Prisma necesita OpenSSL en Alpine
+RUN apk add --no-cache openssl
+
+WORKDIR /usr/src/app
+
+# Copia solo lo necesario para instalar dependencias (mejor cache)
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instala dependencias
+RUN npm install
+
+# Genera el cliente de Prisma
+RUN npx prisma generate
+
+# Copia el resto del código fuente
+COPY . .
+
+EXPOSE 3001
+
+# En dev se usa hot-reload, este CMD es sobreescrito por docker-compose.dev.yml
+CMD ["npm", "run", "start:dev"]

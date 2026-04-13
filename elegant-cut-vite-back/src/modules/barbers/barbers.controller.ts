@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Patch, Delete, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Patch, Delete, ParseIntPipe, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { BarbersService } from './barbers.service';
 import { CreateBarberDto } from './dto/create.barbers.dto';
@@ -24,8 +25,8 @@ export class BarbersController {
     }
 
     @ApiOperation({ summary: 'Obtener todos los barberos (Admin)', description: 'Solo para administradores, devuelve todos los barberos con toda su información, incluyendo los inactivos.' })
-    @Get('admin/all')
-    async getAllForAdmin() {
+    @Get('all')
+    async getAllBarbers() {
         return this.barbersService.getAllBarbers();
     }
 
@@ -37,12 +38,19 @@ export class BarbersController {
     }
 
     //acá definimos y creamos el post para crear el barbero
-
     @ApiOperation({ summary: 'Crear un nuevo barbero', description: 'Registra un nuevo usuario con el rol 3 (Barbero) y encripta su contraseña.' })
     @ApiResponse({ status: 201, description: 'Barbero creado exitosamente.' })
     @Post()
-    async crearBarbero(@Body() createBarberDto: CreateBarberDto) {
-        return await this.barbersService.crearBarbero(createBarberDto)
+    @UseInterceptors(FileInterceptor('image'))
+    async crearBarbero(@Body() createBarberDto: CreateBarberDto, @UploadedFile() image: Express.Multer.File) {
+        try {
+            // Lógica normal, pasamos los datos del FormData (que ahora son strings)
+            await this.barbersService.crearBarbero(createBarberDto);
+            return { success: true, message: 'Barbero creado correctamente' };
+        } catch (error) {
+            console.error(error);
+            return { success: false, message: 'Error interno al crear el barbero' };
+        }
     }
 
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---
@@ -52,6 +60,13 @@ export class BarbersController {
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number) {
         return this.barbersService.findOne(id);
+    }
+
+    @ApiOperation({ summary: 'Alternar estado del barbero', description: 'Activa o desactiva (estado true/false) el barbero indicado.' })
+    @ApiParam({ name: 'id', description: 'ID del barbero' })
+    @Put(':id/toggle')
+    async toggleStatus(@Param('id', ParseIntPipe) id: number) {
+        return this.barbersService.toggleStatus(id);
     }
 
     @ApiOperation({ summary: 'Actualizar datos de barbero (Admin)', description: 'Permite modificar cualquier dato de un barbero.' })

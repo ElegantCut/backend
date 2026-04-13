@@ -3,11 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // 1. Prefijo global para todas las rutas
+  const cookieHandler = (cookieParser as any).default || cookieParser;
+  app.use(typeof cookieHandler === 'function' ? cookieHandler() : (cookieParser as any)());
+
   app.setGlobalPrefix('api');
 
   // 2. Tuberías de validación (¡Esto está perfecto!)
@@ -19,11 +23,12 @@ async function bootstrap() {
     }),
   );
 
-  // 3. Habilitar CORS para conectar con Vite
+  // 3. Habilitar CORS para conectar con Vite (Configuración robusta para cookies)
   app.enableCors({
-    origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
   });
 
   // 4. Configurar Swagger
@@ -33,7 +38,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth() // Soporte para JWT Token en Swagger
     .build();
-    
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
@@ -42,7 +47,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`\n Servidor corriendo en: http://localhost:${port}/api`);
 }

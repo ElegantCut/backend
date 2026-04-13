@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
-import { PrismaService } from 'src/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../../prisma/prisma.service';
+import * as bcrypt from 'bcryptjs';
 import { CreateBarberDto } from './dto/create.barbers.dto';
 
 @Injectable()
@@ -9,11 +9,28 @@ export class BarbersService {
     constructor(private readonly barbersRepo: BarbersRepository, private readonly prisma: PrismaService) { }
 
     async getAllBarbers() {
-        return this.barbersRepo.findAll();
+        try {
+            const data = await (this.prisma.usuarios as any).findMany({
+                where: { id_rol: 3 },
+                orderBy: { created_at: 'desc' },
+                include: { 
+                    portafolios: true,
+                    resenas_recibidas: {
+                        where: { estado: 1 },
+                        select: { calificacion: true }
+                    }
+                }
+            });
+            const mappedData = data.map(barber => this.mapBarberWithRating(barber));
+            return { success: true, data: mappedData };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
     }
 
     async getPublicBarbers() {
-        return this.barbersRepo.findActive();
+        const barbers = await this.barbersRepo.findActive();
+        return barbers.map(barber => this.mapBarberWithRating(barber));
     }
 
     async getBarberStats(id: number) {
@@ -21,14 +38,19 @@ export class BarbersService {
     }
     // obtener los barberos llamandi la lógica de ts
     async obtenerBarberos() {
-        return this.prisma.usuarios.findMany({
+        const data = await (this.prisma.usuarios as any).findMany({
             where: {
                 id_rol: 3,
             },
             include: {
-                portafolios: true
+                portafolios: true,
+                resenas_recibidas: {
+                    where: { estado: 1 },
+                    select: { calificacion: true }
+                }
             }
-        })
+        });
+        return data.map(barber => this.mapBarberWithRating(barber));
     }
 
     // crear un nuevo barber
@@ -68,19 +90,24 @@ export class BarbersService {
     // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
 
     async findOne(id: number) {
-        const barbero = await this.prisma.usuarios.findFirst({
+        const barbero = await (this.prisma.usuarios as any).findFirst({
             where: { id_usuario: id, id_rol: 3 },
             include: {
                 portafolios: true,
                 barberos_servicios: {
                     include: { servicios: true }
+                },
+                resenas_recibidas: {
+                    where: { estado: 1 },
+                    select: { calificacion: true }
                 }
             }
         });
 
         if (!barbero) throw new NotFoundException(`Barbero con ID ${id} no encontrado`);
         
-        const { password_hash, ...result } = barbero;
+        const mappedBarber = this.mapBarberWithRating(barbero);
+        const { password_hash, ...result } = mappedBarber;
         return result;
     }
 
@@ -129,6 +156,18 @@ export class BarbersService {
         return result;
     }
 
+    async toggleStatus(id: number) {
+        const barbero = await this.findOne(id);
+        const newStatus = !barbero.estado;
+        
+        await this.prisma.usuarios.update({
+            where: { id_usuario: id },
+            data: { estado: newStatus }
+        });
+
+        return { success: true, newStatus };
+    }
+
     async remove(id: number) {
         await this.findOne(id); // Verifica si existe
         
@@ -139,4 +178,23 @@ export class BarbersService {
         });
     }
 
+    private mapBarberWithRating(barber: any) {
+        const resenas = barber.resenas_recibidas || [];
+        const count = resenas.length;
+        const sum = resenas.reduce((acc: number, r: any) => acc + r.calificacion, 0);
+        const avg = count > 0 ? (sum / count).toFixed(1) : "5.0";
+
+        // Inyectamos como propiedades virtuales en la raíz del objeto barbero
+        barber.calificacion_promedio = parseFloat(avg as string);
+        barber.total_resenas = count;
+
+        // También inyectamos en el portafolio para mantener compatibilidad con el frontend actual
+        const portfolio = Array.isArray(barber.portafolios) ? barber.portafolios[0] : barber.portafolios;
+        if (portfolio) {
+            portfolio.calificacion = parseFloat(avg as string);
+            portfolio.rese_as_count = count;
+        }
+
+        return barber;
+    }
 }

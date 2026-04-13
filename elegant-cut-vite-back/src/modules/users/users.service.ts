@@ -53,8 +53,56 @@ export class UsersService {
         return this.prisma.usuarios.findMany();
     }
 
+    // --- NUEVOS MÉTODOS PARA EL DASHBOARD DE ADMIN ---
+    async activateClient(id: number) {
+        try {
+            await this.prisma.usuarios.update({
+                where: { id_usuario: id },
+                data: { estado: true }
+            });
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false };
+        }
+    }
+
+    async deactivateClient(id: number) {
+        try {
+            await this.remove(id); // remove() ya pone el estado en false
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false };
+        }
+    }
+
+    async findAllClients() {
+        try {
+            const data = await this.prisma.usuarios.findMany({
+                where: { id_rol: 2 }, // Clientes (todos, activos e inactivos)
+                orderBy: { created_at: 'desc' }
+            });
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
+    }
+
+    async findAllAdmins() {
+        try {
+            const data = await this.prisma.usuarios.findMany({
+                where: { id_rol: 1 }, // Administradores
+                orderBy: { created_at: 'desc' }
+            });
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
+    }
+
     async crearUsuario(data: CrearUsuarioDto) {
-        // Encriptar la contraseña antes de guardar el usuario
+        // Encriptar la contraseña antes de guardar el usuario (Centralizado, cubre Admin y Registro)
         const hashedPassword = await this.hashPassword(data.password_hash);
 
         return await this.prisma.usuarios.create({

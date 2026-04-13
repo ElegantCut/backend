@@ -20,4 +20,14 @@ export class CrearServicioDto {
     @IsNumber()
     @IsPositive({ message: 'La duración debe ser un número positivo (ejemplo: 40)' })
     duracion: number;
+
+    @ApiProperty({ description: 'Descripción detallada del servicio', example: 'Corte moderno con degradado' })
+    @IsString()
+    @IsNotEmpty({ message: 'La descripción es obligatoria' })
+    descripcion: string;
+
+    @ApiProperty({ description: 'ID de la categoría a la que pertenece', example: 1 })
+    @IsNumber()
+    @IsNotEmpty({ message: 'La categoría es obligatoria' })
+    id_categoria: number;
 }

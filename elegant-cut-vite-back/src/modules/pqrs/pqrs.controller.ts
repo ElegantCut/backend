@@ -36,6 +36,13 @@ export class PqrsController {
         return this.pqrsService.obtenerPqrs();
     }
 
+    @ApiOperation({ summary: 'Consultar estado por radicado', description: 'Permite buscar el estado de una PQRS usando su código de radicado (ej: PQRS-12-2024).' })
+    @ApiParam({ name: 'radicado', description: 'Número de radicado', example: 'PQRS-1-2026' })
+    @Get('status/:radicado')
+    async findByRadicado(@Param('radicado') radicado: string) {
+        return this.pqrsService.findByRadicado(radicado);
+    }
+
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---
     @ApiOperation({ summary: 'Obtener detalle de una queja o reclamo', description: 'Devuelve toda la información de una PQRS específica incluyendo datos del usuario asociado.' })
     @ApiParam({ name: 'id', description: 'ID de la PQRS', example: 1 })

@@ -12,6 +12,41 @@ export class ServicesService {
         return this.servicesRepo.findAll();
     }
 
+    async findAllAdmin() {
+        try {
+            const servicios = await this.prisma.servicios.findMany({
+                orderBy: { id_servicio: 'desc' }
+            });
+            
+            // Mapeamos los campos para que coincidan exactamente con lo que espera el Frontend React
+            const data = servicios.map(s => ({
+                id_servicio: s.id_servicio,
+                nombre_servicio: s.nombre,
+                descripcion: s.descripcion,
+                precio: s.precio,
+                duracion_minutos: s.duracion
+            }));
+
+            return { success: true, data };
+        } catch (error) {
+            console.error(error);
+            return { success: false, data: [] };
+        }
+    }
+
+    async findAllCategories() {
+        try {
+            const categories = await this.prisma.categorias.findMany({
+                include: { genero_servicio: true },
+                orderBy: { nombre: 'asc' }
+            });
+            return { success: true, data: categories };
+        } catch (error) {
+            console.error(error);
+            return { success: false, data: [] };
+        }
+    }
+
     async create(data: any) {
         return this.servicesRepo.create(data);
     }
@@ -70,12 +105,16 @@ export class ServicesService {
     }
 
     async remove(id: number) {
-        await this.findOne(id); // Verifica si existe
+        try {
+            await this.findOne(id); // Verifica si existe
 
-        // Aquí SÍ podemos hacer un borrado real o mantener el soft delete si tienes una columna estado
-        // Asumiendo que quieres borrarlo de BD
-        return await this.prisma.servicios.delete({
-            where: { id_servicio: id },
-        });
+            await this.prisma.servicios.delete({
+                where: { id_servicio: id },
+            });
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false, message: 'No se pudo eliminar el servicio porque tiene dependencias.' };
+        }
     }
 }

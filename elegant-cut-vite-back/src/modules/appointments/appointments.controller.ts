@@ -8,6 +8,7 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 @Controller('appointments')
 export class AppointmentsController {
     constructor(private readonly appointmentsService: AppointmentsService) { }
+    // Debug: Route user/:userId should be registered.
     // estos son los get
     @ApiOperation({ summary: 'Consultar disponibilidad', description: 'Devuelve los horarios disponibles para un barbero en una fecha específica.' })
     @ApiQuery({ name: 'date', description: 'Fecha a consultar (YYYY-MM-DD)', example: '2023-12-01' })
@@ -17,7 +18,19 @@ export class AppointmentsController {
         return this.appointmentsService.getAvailability(date, +barberId);
     }
 
-    @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas (Ideal para el dashboard admin).' })
+    @ApiOperation({ summary: 'Obtener todas las citas (Admin Dashboard)', description: 'Devuelve todas las reservas con un formato específico para la tabla del dashboard admin.' })
+    @Get('admin/all')
+    async getAllAdmin() {
+        return this.appointmentsService.findAllAdmin();
+    }
+
+    @ApiOperation({ summary: 'Cambiar el estado de una cita', description: 'Permite aprobar o cancelar una cita desde el panel de control.' })
+    @Patch('admin/:id/status')
+    async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('nuevoEstado') nuevoEstado: any) {
+        return this.appointmentsService.changeStatusAdmin(id, Number(nuevoEstado));
+    }
+
+    @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas.' })
     @Get()
     async getAll() {
         return this.appointmentsService.getAll();
@@ -42,7 +55,24 @@ export class AppointmentsController {
         return this.appointmentsService.createAppointment(CreateAppointmentDto);
     }
 
-    // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+    @ApiOperation({ summary: 'Obtener todas las citas por usuario', description: 'Devuelve la lista de citas realizadas por un usuario específico.' })
+    @ApiParam({ name: 'userId', description: 'ID del usuario', example: '1' })
+    @Get('user/:userId')
+    async getByUser(@Param('userId', ParseIntPipe) userId: number) {
+        return this.appointmentsService.getAppointmentsByUser(userId);
+    }
+
+    @ApiOperation({ summary: 'Obtener todos los bloques de horarios', description: 'Devuelve la lista de bloques de tiempo (horarios) disponibles en la base de datos.' })
+    @Get('horarios')
+    async getHorarios() {
+        return this.appointmentsService.getHorarios();
+    }
+
+    @ApiOperation({ summary: 'Obtener recordatorios para mañana', description: 'Devuelve una lista simplificada de citas de mañana para n8n.' })
+    @Get('reminders/tomorrow')
+    async getRemindersTomorrow() {
+        return this.appointmentsService.getTomorrowReminders();
+    }
 
     @ApiOperation({ summary: 'Obtener detalle de una cita', description: 'Devuelve toda la información de una reserva específica incluyendo usuario, barbero y servicios afines.' })
     @ApiParam({ name: 'id', description: 'ID de la reserva', example: 1 })

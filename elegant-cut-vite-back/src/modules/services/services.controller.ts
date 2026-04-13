@@ -14,6 +14,18 @@ export class ServicesController {
      * Obtiene todos los servicios registrados.
      * Se usa un solo método para evitar conflictos de rutas y mejorar el rendimiento.
      */
+    @ApiOperation({ summary: 'Obtener servicios (Admin)', description: 'Devuelve la lista con el formato específico que requiere la tabla del Dashboard.' })
+    @Get('admin/all')
+    async getAllAdmin() {
+        return this.servicesService.findAllAdmin();
+    }
+
+    @ApiOperation({ summary: 'Obtener categorías (Admin)', description: 'Devuelve la lista de categorías con su género para el formulario de nuevo servicio.' })
+    @Get('categories')
+    async getCategories() {
+        return this.servicesService.findAllCategories();
+    }
+
     @ApiOperation({ summary: 'Obtener todos los servicios', description: 'Devuelve la lista completa de los servicios de barbería ofrecidos.' })
     @ApiResponse({ status: 200, description: 'Lista de servicios obtenida existosamente.' })
     @Get()
