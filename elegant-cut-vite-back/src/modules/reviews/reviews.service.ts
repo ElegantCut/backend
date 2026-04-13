@@ -31,7 +31,8 @@ export class ReviewsService {
                 },
                 usuarios_resenas_id_clienteTousuarios: {
                     select: {
-                        prim_nombre: true
+                        prim_nombre: true,
+                        apellido1: true
                     }
                 }
             }

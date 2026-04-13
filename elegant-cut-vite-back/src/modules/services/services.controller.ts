@@ -20,6 +20,12 @@ export class ServicesController {
         return this.servicesService.findAllAdmin();
     }
 
+    @ApiOperation({ summary: 'Obtener categorías (Admin)', description: 'Devuelve la lista de categorías con su género para el formulario de nuevo servicio.' })
+    @Get('categories')
+    async getCategories() {
+        return this.servicesService.findAllCategories();
+    }
+
     @ApiOperation({ summary: 'Obtener todos los servicios', description: 'Devuelve la lista completa de los servicios de barbería ofrecidos.' })
     @ApiResponse({ status: 200, description: 'Lista de servicios obtenida existosamente.' })
     @Get()

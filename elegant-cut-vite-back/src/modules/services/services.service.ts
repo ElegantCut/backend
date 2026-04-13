@@ -34,6 +34,19 @@ export class ServicesService {
         }
     }
 
+    async findAllCategories() {
+        try {
+            const categories = await this.prisma.categorias.findMany({
+                include: { genero_servicio: true },
+                orderBy: { nombre: 'asc' }
+            });
+            return { success: true, data: categories };
+        } catch (error) {
+            console.error(error);
+            return { success: false, data: [] };
+        }
+    }
+
     async create(data: any) {
         return this.servicesRepo.create(data);
     }

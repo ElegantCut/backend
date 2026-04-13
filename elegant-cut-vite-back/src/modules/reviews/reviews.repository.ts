@@ -34,7 +34,7 @@ export class ReviewsRepository {
                 calificacion: Number(calificacion), 
                 comentario,
                 id_barbero: id_barbero ? Number(id_barbero) : null,
-                estado: 1
+                estado: 1 // Forzamos estado activo para que sea visible de inmediato
             },
         });
         return result;
