@@ -104,6 +104,7 @@ export class AppointmentsService {
             },
             include: {
                 usuarios: true,
+                horarios: true,
                 detalle_cita_servicio: {
                     include: {
                         servicios: true
