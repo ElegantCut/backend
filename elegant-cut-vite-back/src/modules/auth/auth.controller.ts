@@ -34,8 +34,8 @@ export class AuthController {
             path: '/',
             maxAge: 24 * 60 * 60 * 1000,
         });
-        delete result.token;
-        return result;
+        const { token, ...data } = result;
+        return data;
     }
 
     @ApiOperation({ summary: 'Registrar nuevo usuario', description: 'Registra a un nuevo usuario cliente en la plataforma.' })
