@@ -54,19 +54,6 @@ CREATE TABLE `pagos` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `resenas` (
-    `id_resena` INTEGER NOT NULL AUTO_INCREMENT,
-    `nombre_cliente` VARCHAR(100) NOT NULL,
-    `email_cliente` VARCHAR(100) NOT NULL,
-    `calificacion` INTEGER NOT NULL,
-    `comentario` TEXT NOT NULL,
-    `fecha_resena` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `estado` TINYINT NULL DEFAULT 1,
-
-    PRIMARY KEY (`id_resena`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `reservas` (
     `id_reservas` INTEGER NOT NULL AUTO_INCREMENT,
     `fecha` DATETIME(0) NOT NULL,
@@ -96,7 +83,11 @@ CREATE TABLE `servicios` (
     `nombre` VARCHAR(70) NULL,
     `precio` DECIMAL(10, 2) NOT NULL,
     `duracion` INTEGER NOT NULL,
+    `descripcion` VARCHAR(150) NULL,
+    `id_categoria` INTEGER NULL,
+    `imagen` VARCHAR(255) NULL,
 
+    INDEX `fk_servicio_categoria`(`id_categoria`),
     PRIMARY KEY (`id_servicio`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -123,11 +114,89 @@ CREATE TABLE `usuarios` (
     `id_rol` INTEGER NOT NULL,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `foto_perfil` LONGTEXT NULL,
+    `foto_perfil` VARCHAR(255) NULL,
 
     UNIQUE INDEX `username`(`username`),
     INDEX `fk_rol_usuario`(`id_rol`),
     PRIMARY KEY (`id_usuario`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `pqrs` (
+    `id_pqrs` INTEGER NOT NULL AUTO_INCREMENT,
+    `tipo` ENUM('Peticion', 'Queja', 'Reclamo', 'Sugerencia') NOT NULL,
+    `asunto` VARCHAR(100) NOT NULL,
+    `descripcion` TEXT NOT NULL,
+    `fecha_creacion` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `estado` ENUM('Pendiente', 'En Proceso', 'Resuelto', 'Cerrado') NULL DEFAULT 'Pendiente',
+    `id_usuario` INTEGER NOT NULL,
+    `respuesta_admin` TEXT NULL,
+
+    INDEX `fk_usuario_pqrs`(`id_usuario`),
+    PRIMARY KEY (`id_pqrs`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `portafolios` (
+    `id_portafolio` INTEGER NOT NULL AUTO_INCREMENT,
+    `id_usuario` INTEGER NOT NULL,
+    `biografia` TEXT NULL,
+    `experiencia` VARCHAR(100) NULL,
+    `especialidades` LONGTEXT NULL,
+    `instagram` VARCHAR(100) NULL,
+    `fotos_portafolio` LONGTEXT NULL,
+    `calificacion` DECIMAL(3, 2) NULL,
+    `rese_as_count` INTEGER NULL DEFAULT 0,
+
+    INDEX `id_usuario`(`id_usuario`),
+    UNIQUE INDEX `id_usuario_2`(`id_usuario`),
+    PRIMARY KEY (`id_portafolio`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `resenas` (
+    `id_resena` INTEGER NOT NULL AUTO_INCREMENT,
+    `calificacion` INTEGER NOT NULL,
+    `comentario` TEXT NOT NULL,
+    `fecha_resena` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `estado` TINYINT NULL DEFAULT 1,
+    `id_barbero` INTEGER NULL,
+    `id_cliente` INTEGER NULL,
+
+    INDEX `idx_resena_barbero`(`id_barbero`),
+    INDEX `fk_resena_cliente`(`id_cliente`),
+    PRIMARY KEY (`id_resena`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `barberos_servicios` (
+    `id_barbero_servicio` INTEGER NOT NULL AUTO_INCREMENT,
+    `id_barbero` INTEGER NOT NULL,
+    `id_servicio` INTEGER NOT NULL,
+
+    INDEX `id_barbero`(`id_barbero`),
+    INDEX `id_servicio`(`id_servicio`),
+    PRIMARY KEY (`id_barbero_servicio`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `categorias` (
+    `id_categoria` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(100) NOT NULL,
+    `descripcion` VARCHAR(255) NULL,
+    `estado` BOOLEAN NULL DEFAULT true,
+    `id_genero` INTEGER NULL,
+
+    INDEX `fk_servicio_genero`(`id_genero`),
+    PRIMARY KEY (`id_categoria`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `genero_servicio` (
+    `id_genero` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(50) NOT NULL,
+
+    PRIMARY KEY (`id_genero`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
@@ -153,3 +222,27 @@ ALTER TABLE `reservas` ADD CONSTRAINT `fk_reserva_usuario` FOREIGN KEY (`id_usua
 
 -- AddForeignKey
 ALTER TABLE `usuarios` ADD CONSTRAINT `fk_rol_usuario` FOREIGN KEY (`id_rol`) REFERENCES `rol`(`id_rol`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `pqrs` ADD CONSTRAINT `fk_usuario_pqrs` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `portafolios` ADD CONSTRAINT `portafolios_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios`(`id_usuario`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `resenas` ADD CONSTRAINT `fk_resena_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `usuarios`(`id_usuario`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE `resenas` ADD CONSTRAINT `fk_resenas_barbero` FOREIGN KEY (`id_barbero`) REFERENCES `usuarios`(`id_usuario`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `barberos_servicios` ADD CONSTRAINT `barberos_servicios_ibfk_1` FOREIGN KEY (`id_barbero`) REFERENCES `usuarios`(`id_usuario`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `barberos_servicios` ADD CONSTRAINT `barberos_servicios_ibfk_2` FOREIGN KEY (`id_servicio`) REFERENCES `servicios`(`id_servicio`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `categorias` ADD CONSTRAINT `fk_servicio_genero` FOREIGN KEY (`id_genero`) REFERENCES `genero_servicio`(`id_genero`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `servicios` ADD CONSTRAINT `fk_servicio_categoria` FOREIGN KEY (`id_categoria`) REFERENCES `categorias`(`id_categoria`) ON DELETE RESTRICT ON UPDATE RESTRICT;

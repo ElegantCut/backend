@@ -1,1 +1,0 @@
-﻿src/modules/auth/auth.service.ts(5,10): error TS2724: '"./guards/jwt-auth.guard"' has no exported member named 'AuthGuard'. Did you mean 'JwtAuthGuard'?

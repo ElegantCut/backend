@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe, Delete, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
 import { CrearServicioDto } from './dto/create-servicio.dto';
 import { UpdateServicioDto } from './dto/update-servicio.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Services - Servicios')
 @Controller('services')
@@ -14,6 +17,9 @@ export class ServicesController {
      * Obtiene todos los servicios registrados.
      * Se usa un solo método para evitar conflictos de rutas y mejorar el rendimiento.
      */
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener servicios (Admin)', description: 'Devuelve la lista con el formato específico que requiere la tabla del Dashboard.' })
     @Get('admin/all')
     async getAllAdmin() {
@@ -47,6 +53,9 @@ export class ServicesController {
 
     //metodos post
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Crear un nuevo servicio', description: 'Añade un nuevo servicio (corte, barba, etc.) al catálogo.' })
     @Post()
     async crearServicio(@Body() crearServicioDto: CrearServicioDto) {
@@ -62,6 +71,9 @@ export class ServicesController {
         return this.servicesService.findOne(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Actualizar un servicio (Admin)', description: 'Permite modificar precio, nombre, duración, etc.' })
     @ApiParam({ name: 'id', description: 'ID del servicio a editar', example: 1 })
     @ApiResponse({ status: 200, description: 'Servicio actualizado exitosamente.' })
@@ -70,6 +82,9 @@ export class ServicesController {
         return this.servicesService.update(id, updateServicioDto);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Eliminar un servicio (Admin)', description: 'Borra de manera definitiva un servicio del catálogo.' })
     @ApiParam({ name: 'id', description: 'ID del servicio a eliminar', example: 1 })
     @Delete(':id')

@@ -5,11 +5,13 @@ import {
     Param,
     UseInterceptors,
     UploadedFile,
-    BadRequestException
+    BadRequestException,
+    UseGuards
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Uploads - Archivos e Imágenes')
 @Controller('uploads')
@@ -33,6 +35,8 @@ export class UploadsController {
             },
         },
     })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     @ApiResponse({ status: 201, description: 'Imagen subida exitosamente.' })
     @Post('upload')
     @UseInterceptors(FileInterceptor('file')) // 'file' es el nombre de la llave en Postman

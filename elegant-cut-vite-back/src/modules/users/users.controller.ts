@@ -1,14 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe,Request, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe, Request, Delete, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
 import { UpdateUsuarioDto } from './dto/update-users.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Users - Usuarios')
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener todos los usuarios', description: 'Devuelve una lista con todos los usuarios registrados en el sistema.' })
     @ApiResponse({ status: 200, description: 'Lista de usuarios obtenida exitosamente.' })
     @Get()
@@ -27,6 +33,9 @@ export class UsersController {
     }
 
     // hacemos el patch update
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Actualizar foto de perfil', description: 'Actualiza o asigna la foto de perfil en Cloudinary a un usuario específico por su ID.' })
     @ApiParam({ name: 'id', description: 'ID del usuario a actualizar', type: Number })
     @ApiBody({ schema: { type: 'object', properties: { public_id: { type: 'string', example: 'elegant-cut/users/foto123' } } } })
@@ -42,6 +51,9 @@ export class UsersController {
 
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener un usuario por ID', description: 'Devuelve información detallada de un usuario específico.' })
     @ApiParam({ name: 'id', description: 'ID del usuario', example: 1 })
     @Get(':id')
@@ -49,6 +61,9 @@ export class UsersController {
         return this.usersService.findOne(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Actualizar datos de usuario (Admin)', description: 'Permite modificar cualquier dato de un usuario (nombre, rol, estado, etc.)' })
     @ApiParam({ name: 'id', description: 'ID del usuario a editar', example: 1 })
     @ApiResponse({ status: 200, description: 'Usuario actualizado existosamente.' })
@@ -57,6 +72,9 @@ export class UsersController {
         return this.usersService.update(id, updateUsuarioDto);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Desactivar/Eliminar usuario (Admin)', description: 'Borrado suave: Cambia el estado del usuario a inactivo en vez de borrarlo permanentemente para no afectar las relaciones de la BD.' })
     @ApiParam({ name: 'id', description: 'ID del usuario a desactivar', example: 1 })
     @Delete(':id')
