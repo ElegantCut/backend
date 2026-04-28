@@ -1,8 +1,11 @@
-import { Controller, Post, Get, Body, Query, Patch, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiNotFoundResponse } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Query, Patch, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiNotFoundResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PqrsService } from './pqrs.service';
 import { CrearPqrsDto } from './dto/create-pqrs.dto';
 import { UpdatePqrsDto } from './dto/update-pqrs.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('PQRS - Peticiones, Quejas, Reclamos y Sugerencias')
 @Controller('pqrs') // Url base para todas las rutas de este controlador
@@ -28,6 +31,9 @@ export class PqrsController {
         }
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener todas las PQRS', description: 'Devuelve todas las solicitudes PQRS registradas en la base de datos (Para el panel de Admin).' })
     @ApiResponse({ status: 200, description: "PQRS encontrada exitosamente" })
     @ApiNotFoundResponse({ description: "No se encontro la PQRS con el ID proporcionado" })
@@ -44,6 +50,9 @@ export class PqrsController {
     }
 
     // --- MÉTODOS CRUD ADMINISTRATIVOS ---
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener detalle de una queja o reclamo', description: 'Devuelve toda la información de una PQRS específica incluyendo datos del usuario asociado.' })
     @ApiParam({ name: 'id', description: 'ID de la PQRS', example: 1 })
     @Get(':id')
@@ -51,6 +60,9 @@ export class PqrsController {
         return this.pqrsService.findOne(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Responder y/o actualizar una PQRS', description: 'Permite al administrador enviar la respuesta o cambiar el estado de la queja de Pendiente a Resuelto.' })
     @ApiParam({ name: 'id', description: 'ID de la PQRS a responder', example: 1 })
     @ApiResponse({ status: 200, description: 'PQRS actualizada exitosamente.' })

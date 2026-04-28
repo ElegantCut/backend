@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Query, Param, Patch, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Query, Param, Patch, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Appointments - Citas y Reservas')
 @Controller('appointments')
@@ -18,18 +21,27 @@ export class AppointmentsController {
         return this.appointmentsService.getAvailability(date, +barberId);
     }
 
+    @ApiBearerAuth()
+    @Roles(1, 3) // Admin y Barbero pueden ver todas las citas
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener todas las citas (Admin Dashboard)', description: 'Devuelve todas las reservas con un formato específico para la tabla del dashboard admin.' })
     @Get('admin/all')
     async getAllAdmin() {
         return this.appointmentsService.findAllAdmin();
     }
 
+    @ApiBearerAuth()
+    @Roles(1, 3) // Admin y Barbero pueden cambiar el estado
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Cambiar el estado de una cita', description: 'Permite aprobar o cancelar una cita desde el panel de control.' })
     @Patch('admin/:id/status')
     async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('nuevoEstado') nuevoEstado: any) {
         return this.appointmentsService.changeStatusAdmin(id, Number(nuevoEstado));
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener todas las citas', description: 'Devuelve el historial completo de citas.' })
     @Get()
     async getAll() {
@@ -48,6 +60,8 @@ export class AppointmentsController {
 
     //aca voy a añadir los post
 
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Agendar nueva cita', description: 'Crea una nueva reserva de cita conectando a un cliente con un barbero en un horario específico.' })
     @ApiResponse({ status: 201, description: 'Cita creada exitosamente.' })
     @Post()
@@ -55,6 +69,8 @@ export class AppointmentsController {
         return this.appointmentsService.createAppointment(CreateAppointmentDto);
     }
 
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Obtener todas las citas por usuario', description: 'Devuelve la lista de citas realizadas por un usuario específico.' })
     @ApiParam({ name: 'userId', description: 'ID del usuario', example: '1' })
     @Get('user/:userId')
@@ -81,6 +97,9 @@ export class AppointmentsController {
         return this.appointmentsService.findOne(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1, 3) // Admin y Barbero
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Actualizar estado o datos de la cita (Admin)', description: 'Permite al administrador o barbero procesar cambios, Ej: confirmar cita, cancelar cita.' })
     @ApiParam({ name: 'id', description: 'ID de la reserva a modificar', example: 1 })
     @ApiResponse({ status: 200, description: 'Cita actualizada exitosamente.' })

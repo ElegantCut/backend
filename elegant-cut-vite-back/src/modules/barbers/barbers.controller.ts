@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, Patch, Delete, ParseIntPipe, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Patch, Delete, ParseIntPipe, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { BarbersService } from './barbers.service';
 import { CreateBarberDto } from './dto/create.barbers.dto';
 import { UpdateBarberDto } from './dto/update.barbers.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Barbers - Barberos')
 @Controller('barbers')
@@ -24,6 +27,9 @@ export class BarbersController {
         return this.barbersService.getPublicBarbers();
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Obtener todos los barberos (Admin)', description: 'Solo para administradores, devuelve todos los barberos con toda su información, incluyendo los inactivos.' })
     @Get('all')
     async getAllBarbers() {
@@ -38,6 +44,9 @@ export class BarbersController {
     }
 
     //acá definimos y creamos el post para crear el barbero
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Crear un nuevo barbero', description: 'Registra un nuevo usuario con el rol 3 (Barbero) y encripta su contraseña.' })
     @ApiResponse({ status: 201, description: 'Barbero creado exitosamente.' })
     @Post()
@@ -62,6 +71,9 @@ export class BarbersController {
         return this.barbersService.findOne(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Alternar estado del barbero', description: 'Activa o desactiva (estado true/false) el barbero indicado.' })
     @ApiParam({ name: 'id', description: 'ID del barbero' })
     @Put(':id/toggle')
@@ -69,6 +81,9 @@ export class BarbersController {
         return this.barbersService.toggleStatus(id);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Actualizar datos de barbero (Admin)', description: 'Permite modificar cualquier dato de un barbero.' })
     @ApiParam({ name: 'id', description: 'ID del barbero a editar', example: 1 })
     @ApiResponse({ status: 200, description: 'Barbero actualizado exitosamente.' })
@@ -77,6 +92,9 @@ export class BarbersController {
         return this.barbersService.update(id, updateBarberDto);
     }
 
+    @ApiBearerAuth()
+    @Roles(1) // Solo Admin
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiOperation({ summary: 'Desactivar/Eliminar barbero (Admin)', description: 'Borrado suave: Cambia el estado del barbero a inactivo.' })
     @ApiParam({ name: 'id', description: 'ID del barbero a desactivar', example: 1 })
     @Delete(':id')

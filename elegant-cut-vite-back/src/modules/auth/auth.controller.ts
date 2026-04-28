@@ -34,8 +34,9 @@ export class AuthController {
             path: '/',
             maxAge: 24 * 60 * 60 * 1000,
         });
-        const { token, ...data } = result;
-        return data;
+        // Retornamos el resultado completo incluyendo el token
+        // El frontend usa la cookie automáticamente, y Swagger puede ver el token en la respuesta
+        return result;
     }
 
     @ApiOperation({ summary: 'Registrar nuevo usuario', description: 'Registra a un nuevo usuario cliente en la plataforma.' })

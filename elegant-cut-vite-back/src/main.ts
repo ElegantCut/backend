@@ -36,14 +36,65 @@ async function bootstrap() {
     .setTitle('Elegant Cut API')
     .setDescription('Documentación de la API de Elegant Cut, para reservación de barberías.')
     .setVersion('1.0')
-    .addBearerAuth() // Soporte para JWT Token en Swagger
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      name: 'JWT',
+      description: 'Ingresa tu token JWT',
+      in: 'header',
+    }, 'bearer') // Nombre del esquema: 'bearer'
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
+  // Script para auto-rellenar el token en Swagger después del login
+  const customJs = `
+    (function() {
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        const url = args[0];
+        
+        // Si es la ruta de login y la respuesta es exitosa
+        if (typeof url === 'string' && url.includes('/auth/login') && response.ok) {
+          const clone = response.clone();
+          const body = await clone.json();
+          
+          if (body.token) {
+            // Estructura que usa Swagger UI para persistir la autorización
+            const authData = {
+              "bearer": {
+                "name": "bearer",
+                "schema": {
+                  "type": "http",
+                  "scheme": "bearer",
+                  "bearerFormat": "JWT",
+                  "in": "header"
+                },
+                "value": body.token
+              }
+            };
+            // Guardamos en localStorage para que Swagger lo reconozca
+            localStorage.setItem('swagger-js-ui-authorized', JSON.stringify(authData));
+            
+            // Opcional: Recargar para que Swagger aplique el cambio visualmente
+            console.log('✅ Token auto-guardado en Swagger');
+            setTimeout(() => {
+              window.location.reload(); 
+            }, 500);
+          }
+        }
+        return response;
+      };
+    })();
+  `;
+
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
-      persistAuthorization: true, // Mantener el token aunque se recargue la página
+      persistAuthorization: true,
     },
+    customJsStr: customJs,
   });
 
   const port = process.env.PORT || 3001;
