@@ -25,7 +25,7 @@ async function bootstrap() {
 
   // 3. Habilitar CORS para conectar con Vite (Configuración robusta para cookies)
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: true, // Permite cualquier origen que realice la petición
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
