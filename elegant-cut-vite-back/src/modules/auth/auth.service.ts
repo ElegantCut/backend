@@ -8,6 +8,7 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,8 @@ export class AuthService {
         private emailService: EmailService,
         private prisma: PrismaService,
     ) { }
+
+    private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
     async login(loginDto: LoginDto) {
         const { username, contrasena } = loginDto;
@@ -152,6 +155,88 @@ export class AuthService {
         await this.emailService.sendVerificationCode(email, codigoSecreto);
 
         return { message: 'Se ha enviado un código a tu correo.' };
+    }
+
+    async googleLogin(token: string) {
+        try {
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            if (!payload) throw new BadRequestException('Token de Google inválido');
+
+            const { email, sub: google_id, given_name, family_name, picture } = payload;
+
+            // Buscar usuario por email o google_id
+            let user = await this.prisma.usuarios.findFirst({
+                where: {
+                    OR: [
+                        { email: email },
+                        { google_id: google_id }
+                    ]
+                },
+                include: { rol: true }
+            });
+
+            if (!user) {
+                // POBALR TABLA: Si no existe, lo creamos
+                user = await this.prisma.usuarios.create({
+                    data: {
+                        email: email!,
+                        google_id: google_id,
+                        prim_nombre: given_name || 'Usuario',
+                        apellido1: family_name || 'Google',
+                        id_rol: 2, // Rol cliente
+                        estado: true,
+                        foto_perfil: picture,
+                        username: (email || 'user').split('@')[0] + Math.floor(Math.random() * 1000)
+                    },
+                    include: { rol: true }
+                });
+            } else if (!user.google_id) {
+                // Si existía por email pero no tenía google_id, lo vinculamos
+                user = await this.prisma.usuarios.update({
+                    where: { id_usuario: user.id_usuario },
+                    data: { google_id: google_id },
+                    include: { rol: true }
+                });
+            }
+
+            // Generar payload para nuestro JWT
+            let role = user.rol?.nombre_rol ? user.rol.nombre_rol.toLowerCase() : 'cliente';
+            if (role === 'administrador') role = 'admin';
+            if (role === 'barbero') role = 'barber';
+
+            const jwtPayload = {
+                id: user.id_usuario,
+                id_usuario: user.id_usuario,
+                username: user.username,
+                email: user.email,
+                name: `${user.prim_nombre} ${user.apellido1}`,
+                role: role,
+                id_rol: user.id_rol,
+                userId: user.id_usuario,
+            };
+
+            return {
+                success: true,
+                message: 'Login con Google exitoso',
+                token: this.jwtService.sign(jwtPayload),
+                user: {
+                    id_usuario: user.id_usuario,
+                    username: user.username,
+                    email: user.email,
+                    name: `${user.prim_nombre} ${user.apellido1}`,
+                    role: role,
+                    id_rol: user.id_rol,
+                    userId: user.id_usuario,
+                },
+            };
+        } catch (error) {
+            console.error('Error en Google Login:', error);
+            throw new UnauthorizedException('Error al validar con Google');
+        }
     }
 
     async validateToken(user: any) {

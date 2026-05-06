@@ -111,6 +111,7 @@ model usuarios {
   apellido2                            String?              @db.VarChar(70)
   email                                String               @db.VarChar(70)
   password_hash                        String?              @db.VarChar(255)
+  google_id                            String?              @unique(map: "google_id") @db.VarChar(100)
   telefono                             String?              @db.VarChar(20)
   estado                               Boolean              @default(true)
   id_rol                               Int
