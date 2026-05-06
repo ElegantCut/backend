@@ -13,6 +13,18 @@ export class AppointmentsController {
     constructor(private readonly appointmentsService: AppointmentsService) { }
     // Debug: Route user/:userId should be registered.
     // estos son los get
+    @ApiOperation({ summary: 'Obtener todos los bloques de horarios', description: 'Devuelve la lista de bloques de tiempo (horarios) disponibles en la base de datos.' })
+    @Get('horarios')
+    async getHorarios() {
+        return this.appointmentsService.getHorarios();
+    }
+
+    @ApiOperation({ summary: 'Obtener recordatorios para mañana', description: 'Devuelve una lista simplificada de citas de mañana para n8n.' })
+    @Get('reminders/tomorrow')
+    async getRemindersTomorrow() {
+        return this.appointmentsService.getTomorrowReminders();
+    }
+
     @ApiOperation({ summary: 'Consultar disponibilidad', description: 'Devuelve los horarios disponibles para un barbero en una fecha específica.' })
     @ApiQuery({ name: 'date', description: 'Fecha a consultar (YYYY-MM-DD)', example: '2023-12-01' })
     @ApiQuery({ name: 'barberId', description: 'ID del barbero', example: '2' })
@@ -78,17 +90,7 @@ export class AppointmentsController {
         return this.appointmentsService.getAppointmentsByUser(userId);
     }
 
-    @ApiOperation({ summary: 'Obtener todos los bloques de horarios', description: 'Devuelve la lista de bloques de tiempo (horarios) disponibles en la base de datos.' })
-    @Get('horarios')
-    async getHorarios() {
-        return this.appointmentsService.getHorarios();
-    }
-
-    @ApiOperation({ summary: 'Obtener recordatorios para mañana', description: 'Devuelve una lista simplificada de citas de mañana para n8n.' })
-    @Get('reminders/tomorrow')
-    async getRemindersTomorrow() {
-        return this.appointmentsService.getTomorrowReminders();
-    }
+    // moved to top
 
     @ApiOperation({ summary: 'Obtener detalle de una cita', description: 'Devuelve toda la información de una reserva específica incluyendo usuario, barbero y servicios afines.' })
     @ApiParam({ name: 'id', description: 'ID de la reserva', example: 1 })

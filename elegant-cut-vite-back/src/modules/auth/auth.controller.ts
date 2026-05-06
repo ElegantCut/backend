@@ -45,6 +45,21 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
+    @ApiOperation({ summary: 'Iniciar sesión con Google' })
+    @Post('google')
+    async googleLogin(@Body('token') token: string, @Res({ passthrough: true }) res: Response) {
+        const result = await this.authService.googleLogin(token);
+        res.cookie('jwt', result.token, {
+            httpOnly: true,
+            secure: false, 
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        const { token: jwt, ...data } = result;
+        return data;
+    }
+
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Obtener mi perfil', description: 'Devuelve los detalles básicos del usuario que está conectado (según el token).' })
     @UseGuards(AuthGuard('jwt'))
