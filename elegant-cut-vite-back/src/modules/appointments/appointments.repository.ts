@@ -63,8 +63,6 @@ export class AppointmentsRepository {
                     id_usuario: userId,
                     id_estado_cita: 1,
                     id_horarios: idHorarios,
-                    // Nota: id_empleado no existe en el schema actual.
-                    // Agregar la columna en MySQL y regenerar con: npx prisma db pull && npx prisma generate
                 },
             });
 
@@ -76,6 +74,132 @@ export class AppointmentsRepository {
             });
 
             return reserva.id_reservas;
+        });
+    }
+
+    // --- NUEVOS MÉTODOS DE REPOSITORIO PARA CUMPLIR CON SOLID ---
+
+    async findAllWithDetails() {
+        return this.prisma.reservas.findMany({
+            include: {
+                usuarios: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            },
+            orderBy: { fecha: 'desc' }
+        });
+    }
+
+    async updateAppointmentStatus(id: number, nuevoEstado: number) {
+        return this.prisma.reservas.update({
+            where: { id_reservas: id },
+            data: { id_estado_cita: nuevoEstado }
+        });
+    }
+
+    async findAppointmentsByBarber(barberId: number) {
+        return this.prisma.reservas.findMany({
+            where: {
+                id_empleado: barberId,
+            },
+            include: {
+                usuarios: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: {
+                        servicios: true
+                    }
+                }
+            }
+        });
+    }
+
+    async createAppointmentWithTransaction(reservaData: any, id_servicio: number) {
+        return this.prisma.$transaction(async (tx) => {
+            const reservaResult = await tx.reservas.create({
+                data: reservaData,
+            });
+
+            await tx.detalle_cita_servicio.create({
+                data: {
+                    id_reservas: reservaResult.id_reservas,
+                    id_servicio: id_servicio
+                }
+            });
+
+            return reservaResult;
+        });
+    }
+
+    async findUserByUserId(userId: number) {
+        return this.prisma.usuarios.findUnique({
+            where: { id_usuario: userId },
+            select: { email: true, prim_nombre: true, apellido1: true }
+        });
+    }
+
+    async findAllHorarios() {
+        return this.prisma.horarios.findMany({
+            orderBy: { hora_inicio: 'asc' }
+        });
+    }
+
+    async findUniqueWithDetails(id: number) {
+        return this.prisma.reservas.findUnique({
+            where: { id_reservas: id },
+            include: {
+                usuarios: {
+                    select: { prim_nombre: true, apellido1: true, telefono: true, email: true }
+                },
+                estado_cita: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            }
+        });
+    }
+
+    async findAppointmentsByUser(userId: number) {
+        return this.prisma.reservas.findMany({
+            where: { id_usuario: userId },
+            include: {
+                horarios: true,
+                estado_cita: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            },
+            orderBy: { fecha: 'desc' }
+        });
+    }
+
+    async updateAppointment(id: number, data: any) {
+        return this.prisma.reservas.update({
+            where: { id_reservas: id },
+            data: data,
+            include: { estado_cita: true }
+        });
+    }
+
+    async findTomorrowReminders(tomorrow: Date, dayAfterTomorrow: Date) {
+        return this.prisma.reservas.findMany({
+            where: {
+                fecha: {
+                    gte: tomorrow,
+                    lt: dayAfterTomorrow
+                },
+                id_estado_cita: 1 // Solo pendientes
+            },
+            include: {
+                usuarios: true,
+                horarios: true,
+                detalle_cita_servicio: {
+                    include: { servicios: true }
+                }
+            }
         });
     }
 }

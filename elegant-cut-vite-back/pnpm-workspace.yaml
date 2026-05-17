@@ -1,0 +1,8 @@
+# Configuración de pnpm para permitir la construcción automática de dependencias críticas de forma segura y no interactiva.
+allowBuilds:
+  "@nestjs/core": true
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@scarf/scarf": true
+  "prisma": true
+  "unrs-resolver": true

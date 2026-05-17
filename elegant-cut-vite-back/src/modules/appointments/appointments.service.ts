@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Injectable()
@@ -9,7 +8,6 @@ export class AppointmentsService {
     constructor(
         private readonly appointmentsRepo: AppointmentsRepository,
         private readonly usersRepo: UsersRepository,
-        private readonly prisma: PrismaService,
     ) { }
 
     async getAvailability(date: string, barberId: number) {
@@ -17,7 +15,6 @@ export class AppointmentsService {
     }
 
     async bookAppointment(data: any) {
-        // Aquí puedes incluir el flujo de buscar o crear usuario que estaba en el modelo viejo
         return this.appointmentsRepo.create(data);
     }
 
@@ -28,16 +25,7 @@ export class AppointmentsService {
     // Nuevo método formateado específicamente para el listado del panel de Administrador
     async findAllAdmin() {
         try {
-            const citas = await this.prisma.reservas.findMany({
-                include: {
-                    usuarios: true,
-                    horarios: true,
-                    detalle_cita_servicio: {
-                        include: { servicios: true }
-                    }
-                },
-                orderBy: { fecha: 'desc' }
-            });
+            const citas = await this.appointmentsRepo.findAllWithDetails();
 
             const data = citas.map(cita => {
                 // Determinar estado textual sugerido (1=Pendiente, 2=Completada, 3=Cancelada)
@@ -78,10 +66,7 @@ export class AppointmentsService {
         try {
             console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
             
-            const updated = await this.prisma.reservas.update({
-                where: { id_reservas: id },
-                data: { id_estado_cita: nuevoEstado }
-            });
+            const updated = await this.appointmentsRepo.updateAppointmentStatus(id, nuevoEstado);
 
             return { 
                 success: true, 
@@ -98,20 +83,7 @@ export class AppointmentsService {
     }
 
     async getAppointmentsByBarber(barberId: number) {
-        return await this.prisma.reservas.findMany({
-            where: {
-                id_empleado: barberId,
-            },
-            include: {
-                usuarios: true,
-                horarios: true,
-                detalle_cita_servicio: {
-                    include: {
-                        servicios: true
-                    }
-                }
-            }
-        })
+        return await this.appointmentsRepo.findAppointmentsByBarber(barberId);
     }
 
     async createAppointment(datos: CreateAppointmentDto) {
@@ -125,22 +97,7 @@ export class AppointmentsService {
             id_horarios: Number(datos.id_horarios),
         };
         
-        const reserva = await this.prisma.$transaction(async (tx) => {
-            // 1. Crear la reserva
-            const reservaResult = await tx.reservas.create({
-                data: reservaData,
-            });
-
-            // 2. Crear el detalle con el servicio
-            await tx.detalle_cita_servicio.create({
-                data: {
-                    id_reservas: reservaResult.id_reservas,
-                    id_servicio: id_servicio
-                }
-            });
-
-            return reservaResult;
-        });
+        const reserva = await this.appointmentsRepo.createAppointmentWithTransaction(reservaData, id_servicio);
 
         // --- INTEGRACIÓN CON n8n ---
         try {
@@ -150,10 +107,7 @@ export class AppointmentsService {
             const datosAny = datos as any;
 
             // Buscar el email del cliente en la BD como respaldo
-            const cliente = await this.prisma.usuarios.findUnique({
-                where: { id_usuario: Number(datosAny.id_usuario) },
-                select: { email: true, prim_nombre: true, apellido1: true }
-            });
+            const cliente = await this.appointmentsRepo.findUserByUserId(Number(datosAny.id_usuario));
 
             // Priorizar lo que el cliente escribió en el formulario, sino usar BD
             const emailFinal = datosAny.email_contacto || cliente?.email || '';
@@ -186,28 +140,13 @@ export class AppointmentsService {
     }
 
     async getHorarios() {
-        return await this.prisma.horarios.findMany({
-            orderBy: { hora_inicio: 'asc' }
-        });
+        return await this.appointmentsRepo.findAllHorarios();
     }
 
     // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
 
     async findOne(id: number) {
-        const cita = await this.prisma.reservas.findUnique({
-            where: { id_reservas: id },
-            include: {
-                usuarios: {
-                    select: { prim_nombre: true, apellido1: true, telefono: true, email: true }
-                },
-                estado_cita: true,
-                horarios: true,
-                detalle_cita_servicio: {
-                    include: { servicios: true }
-                }
-            }
-        });
-
+        const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
         if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
         return cita;
     }
@@ -215,17 +154,7 @@ export class AppointmentsService {
     async getAppointmentsByUser(userId: number) {
         try {
             const numericUserId = Number(userId);
-            const citas = await this.prisma.reservas.findMany({
-                where: { id_usuario: numericUserId },
-                include: {
-                    horarios: true,
-                    estado_cita: true,
-                    detalle_cita_servicio: {
-                        include: { servicios: true }
-                    }
-                },
-                orderBy: { fecha: 'desc' }
-            });
+            const citas = await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
 
             return { success: true, data: citas };
         } catch (error) {
@@ -242,11 +171,7 @@ export class AppointmentsService {
             data.fecha = new Date(data.fecha);
         }
 
-        return await this.prisma.reservas.update({
-            where: { id_reservas: id },
-            data: data,
-            include: { estado_cita: true }
-        });
+        return await this.appointmentsRepo.updateAppointment(id, data);
     }
 
     // --- MÉTODO PARA RECORDATORIOS (n8n) ---
@@ -258,22 +183,7 @@ export class AppointmentsService {
         const dayAfterTomorrow = new Date(tomorrow);
         dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
 
-        const citas = await this.prisma.reservas.findMany({
-            where: {
-                fecha: {
-                    gte: tomorrow,
-                    lt: dayAfterTomorrow
-                },
-                id_estado_cita: 1 // Solo pendientes
-            },
-            include: {
-                usuarios: true,
-                horarios: true,
-                detalle_cita_servicio: {
-                    include: { servicios: true }
-                }
-            }
-        });
+        const citas = await this.appointmentsRepo.findTomorrowReminders(tomorrow, dayAfterTomorrow);
 
         return citas.map(cita => {
              // Formatear hora inicio (900 -> "9:00")
@@ -289,7 +199,7 @@ export class AppointmentsService {
                  fecha: cita.fecha.toISOString().split('T')[0],
                  hora: `${hh}:${mm}`,
                  servicio: cita.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Servicio Barbería'
-             };
+              };
         });
     }
 }
