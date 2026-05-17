@@ -1,26 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
-import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { CreateBarberDto } from './dto/create.barbers.dto';
 
 @Injectable()
 export class BarbersService {
-    constructor(private readonly barbersRepo: BarbersRepository, private readonly prisma: PrismaService) { }
+    constructor(private readonly barbersRepo: BarbersRepository) { }
 
     async getAllBarbers() {
         try {
-            const data = await (this.prisma.usuarios as any).findMany({
-                where: { id_rol: 3 },
-                orderBy: { created_at: 'desc' },
-                include: { 
-                    portafolios: true,
-                    resenas_recibidas: {
-                        where: { estado: 1 },
-                        select: { calificacion: true }
-                    }
-                }
-            });
+            const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
             const mappedData = data.map(barber => this.mapBarberWithRating(barber));
             return { success: true, data: mappedData };
         } catch (error) {
@@ -36,32 +25,18 @@ export class BarbersService {
     async getBarberStats(id: number) {
         return this.barbersRepo.getStats(id);
     }
-    // obtener los barberos llamandi la lógica de ts
+
     async obtenerBarberos() {
-        const data = await (this.prisma.usuarios as any).findMany({
-            where: {
-                id_rol: 3,
-            },
-            include: {
-                portafolios: true,
-                resenas_recibidas: {
-                    where: { estado: 1 },
-                    select: { calificacion: true }
-                }
-            }
-        });
+        const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
         return data.map(barber => this.mapBarberWithRating(barber));
     }
 
-    // crear un nuevo barber
     async crearBarbero(createBarberDto: CreateBarberDto) {
-    // Encriptar la contraseña antes de guardarla
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(createBarberDto.password_hash, salt);
+        // Encriptar la contraseña antes de guardarla
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(createBarberDto.password_hash, salt);
 
-    // Crear el usuario con id_rol = 3 (que es el rol de Barbero)
-    const nuevoBarbero = await this.prisma.usuarios.create({
-        data: {
+        const userData = {
             prim_nombre: createBarberDto.prim_nombre,
             seg_nombre: createBarberDto.seg_nombre,
             apellido1: createBarberDto.apellido1,
@@ -69,41 +44,23 @@ export class BarbersService {
             email: createBarberDto.email,
             username: createBarberDto.username,
             telefono: createBarberDto.telefono,
-            password_hash: hashedPassword, // Guardamos la encriptada
-            id_rol: 3,
-            estado: true,
-            portafolios: {
-                create: {
-                    biografia: createBarberDto.biografia || null,
-                    experiencia: createBarberDto.experiencia || null,
-                    especialidades: createBarberDto.especialidades || null,
-                }
-            }
-        },
-    });
+            password_hash: hashedPassword,
+        };
 
-    // Retornamos sin mostrar la contraseña por seguridad
-    const { password_hash, ...result } = nuevoBarbero;
-    return result;
-}
+        const portfolioData = {
+            biografia: createBarberDto.biografia || null,
+            experiencia: createBarberDto.experiencia || null,
+            especialidades: createBarberDto.especialidades || null,
+        };
 
-    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+        const nuevoBarbero = await this.barbersRepo.createBarberWithPortfolio(userData, portfolioData);
+
+        const { password_hash, ...result } = nuevoBarbero;
+        return result;
+    }
 
     async findOne(id: number) {
-        const barbero = await (this.prisma.usuarios as any).findFirst({
-            where: { id_usuario: id, id_rol: 3 },
-            include: {
-                portafolios: true,
-                barberos_servicios: {
-                    include: { servicios: true }
-                },
-                resenas_recibidas: {
-                    where: { estado: 1 },
-                    select: { calificacion: true }
-                }
-            }
-        });
-
+        const barbero = await this.barbersRepo.findOneWithDetails(id);
         if (!barbero) throw new NotFoundException(`Barbero con ID ${id} no encontrado`);
         
         const mappedBarber = this.mapBarberWithRating(barbero);
@@ -126,28 +83,18 @@ export class BarbersService {
         if ('especialidades' in data) { portafolioData.especialidades = data.especialidades; delete data.especialidades; }
 
         // Actualizar usuario principal
-        const actualizado = await this.prisma.usuarios.update({
-            where: { id_usuario: id },
-            data,
-        });
+        const actualizado = await this.barbersRepo.updateBarber(id, data);
 
         // Actualizar o crear portafolio si se enviaron datos
         if (Object.keys(portafolioData).length > 0) {
-            const portafolioExistente = await this.prisma.portafolios.findFirst({
-                where: { id_usuario: id }
-            });
+            const portafolioExistente = await this.barbersRepo.findPortfolioByUserId(id);
 
             if (portafolioExistente) {
-                await this.prisma.portafolios.update({
-                    where: { id_portafolio: portafolioExistente.id_portafolio },
-                    data: portafolioData
-                });
+                await this.barbersRepo.updatePortfolio(portafolioExistente.id_portafolio, portafolioData);
             } else {
-                await this.prisma.portafolios.create({
-                    data: {
-                        ...portafolioData,
-                        id_usuario: id
-                    }
+                await this.barbersRepo.createPortfolio({
+                    ...portafolioData,
+                    id_usuario: id
                 });
             }
         }
@@ -160,10 +107,7 @@ export class BarbersService {
         const barbero = await this.findOne(id);
         const newStatus = !barbero.estado;
         
-        await this.prisma.usuarios.update({
-            where: { id_usuario: id },
-            data: { estado: newStatus }
-        });
+        await this.barbersRepo.updateBarber(id, { estado: newStatus });
 
         return { success: true, newStatus };
     }
@@ -172,10 +116,7 @@ export class BarbersService {
         await this.findOne(id); // Verifica si existe
         
         // Soft delete
-        return await this.prisma.usuarios.update({
-            where: { id_usuario: id },
-            data: { estado: false },
-        });
+        return await this.barbersRepo.updateBarber(id, { estado: false });
     }
 
     private mapBarberWithRating(barber: any) {
@@ -184,11 +125,9 @@ export class BarbersService {
         const sum = resenas.reduce((acc: number, r: any) => acc + r.calificacion, 0);
         const avg = count > 0 ? (sum / count).toFixed(1) : "5.0";
 
-        // Inyectamos como propiedades virtuales en la raíz del objeto barbero
         barber.calificacion_promedio = parseFloat(avg as string);
         barber.total_resenas = count;
 
-        // También inyectamos en el portafolio para mantener compatibilidad con el frontend actual
         const portfolio = Array.isArray(barber.portafolios) ? barber.portafolios[0] : barber.portafolios;
         if (portfolio) {
             portfolio.calificacion = parseFloat(avg as string);
