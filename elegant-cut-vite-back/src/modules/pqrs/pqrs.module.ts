@@ -5,10 +5,9 @@ import { PqrsController } from '../pqrs/pqrs.controller';
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 
-
 @Module({
-    imports: [EmailModule, PrismaModule],
-    controllers: [PqrsController],
-    providers: [PqrsService, PqrsRepository],
+  imports: [EmailModule, PrismaModule],
+  controllers: [PqrsController],
+  providers: [PqrsService, PqrsRepository],
 })
-export class PqrsModule { }
+export class PqrsModule {}

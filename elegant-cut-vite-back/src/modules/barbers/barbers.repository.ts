@@ -3,46 +3,46 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class BarbersRepository {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async findAll() {
-        return this.prisma.usuarios.findMany({
-            where: { id_rol: 3 },
-            include: { 
-                _count: { select: { reservas: true } },
-                portafolios: true
-            },
-            orderBy: { created_at: 'desc' },
-        });
-    }
+  async findAll() {
+    return this.prisma.usuarios.findMany({
+      where: { id_rol: 3 },
+      include: {
+        _count: { select: { reservas: true } },
+        portafolios: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
 
-    async findActive() {
-        return (this.prisma.usuarios as any).findMany({
-            where: { id_rol: 3, estado: true },
-            include: {
-                portafolios: true,
-                resenas_recibidas: {
-                    where: { estado: 1 },
-                    select: { calificacion: true }
-                }
-            },
-            orderBy: { prim_nombre: 'asc' },
-        });
-    }
+  async findActive() {
+    return (this.prisma.usuarios as any).findMany({
+      where: { id_rol: 3, estado: true },
+      include: {
+        portafolios: true,
+        resenas_recibidas: {
+          where: { estado: 1 },
+          select: { calificacion: true },
+        },
+      },
+      orderBy: { prim_nombre: 'asc' },
+    });
+  }
 
-    async findById(id: number) {
-        return this.prisma.usuarios.findFirst({
-            where: { id_usuario: id, id_rol: 3 },
-        });
-    }
+  async findById(id: number) {
+    return this.prisma.usuarios.findFirst({
+      where: { id_usuario: id, id_rol: 3 },
+    });
+  }
 
-    async getStats(id: number) {
-        // Nota: reservas no tiene id_empleado en el schema actual.
-        // Cuando se agregue la columna, usar: where: { id_empleado: id }
-        const total = await this.prisma.reservas.count();
-        const completadas = await this.prisma.reservas.count({
-            where: { id_estado_cita: 2 },
-        });
-        return { total_citas: total, citas_completadas: completadas };
-    }
+  async getStats(id: number) {
+    // Nota: reservas no tiene id_empleado en el schema actual.
+    // Cuando se agregue la columna, usar: where: { id_empleado: id }
+    const total = await this.prisma.reservas.count();
+    const completadas = await this.prisma.reservas.count({
+      where: { id_estado_cita: 2 },
+    });
+    return { total_citas: total, citas_completadas: completadas };
+  }
 }

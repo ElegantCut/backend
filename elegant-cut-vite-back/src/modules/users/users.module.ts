@@ -7,9 +7,9 @@ import { AdminController } from './admin.controller';
 import { PrismaModule } from '../../prisma/prisma.module'; // Asegúrate de que la ruta suba los niveles necesarios
 
 @Module({
-    imports: [PrismaModule], // <-- Esto es lo que permite que el service use Prisma
-    controllers: [UsersController, ClientsController, AdminController],
-    providers: [UsersService, UsersRepository],
-    exports: [UsersService, UsersRepository],
+  imports: [PrismaModule], // <-- Esto es lo que permite que el service use Prisma
+  controllers: [UsersController, ClientsController, AdminController],
+  providers: [UsersService, UsersRepository],
+  exports: [UsersService, UsersRepository],
 })
-export class UsersModule { }
+export class UsersModule {}

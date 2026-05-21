@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { LoggerMiddleware } from './common/middlewares/logger.middleware';
 import { PrismaModule } from './prisma/prisma.module'; // La ruta a tu carpeta prisma
 import { AuthModule } from './modules/auth/auth.module';
 import { BarbersModule } from './modules/barbers/barbers.module';
@@ -21,7 +22,8 @@ import { UploadsModule } from './modules/uploads/uploads.module';
       isGlobal: true,
       // En Docker, las variables llegan del docker-compose environment:, no de un .env
       // ignoreEnvFile evita que NestJS busque un .env inexistente y pierda las vars del proceso
-      ignoreEnvFile: process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL,
+      ignoreEnvFile:
+        process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL,
     }),
     PrismaModule,
     AuthModule,
@@ -39,5 +41,8 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     ServiceUModule,
   ],
 })
-export class AppModule { }
-
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

@@ -1,54 +1,89 @@
-import { IsString, IsOptional, IsEmail, IsBoolean, IsNumber, IsDate } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsBoolean,
+  IsNumber,
+  IsDate,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CrearUsuarioDto {
-    @ApiProperty({ description: 'Nombre de usuario único para el login', example: 'juan123' })
-    @IsString()
-    username: string;
+  @ApiProperty({
+    description: 'Nombre de usuario único para el login',
+    example: 'juan123',
+  })
+  @IsString()
+  username: string;
 
-    @ApiProperty({ description: 'Primer nombre del usuario', example: 'Juan' })
-    @IsString()
-    prim_nombre: string;
+  @ApiProperty({ description: 'Primer nombre del usuario', example: 'Juan' })
+  @IsString()
+  prim_nombre: string;
 
-    @ApiPropertyOptional({ description: 'Segundo nombre del usuario (opcional)', example: 'Carlos' })
-    @IsOptional()
-    @IsString()
-    seg_nombre?: string;
+  @ApiPropertyOptional({
+    description: 'Segundo nombre del usuario (opcional)',
+    example: 'Carlos',
+  })
+  @IsOptional()
+  @IsString()
+  seg_nombre?: string;
 
-    @ApiProperty({ description: 'Primer apellido del usuario', example: 'Pérez' })
-    @IsString()
-    apellido1: string;
+  @ApiProperty({ description: 'Primer apellido del usuario', example: 'Pérez' })
+  @IsString()
+  apellido1: string;
 
-    @ApiPropertyOptional({ description: 'Segundo apellido del usuario (opcional)', example: 'Gómez' })
-    @IsOptional()
-    @IsString()
-    apellido2?: string;
+  @ApiPropertyOptional({
+    description: 'Segundo apellido del usuario (opcional)',
+    example: 'Gómez',
+  })
+  @IsOptional()
+  @IsString()
+  apellido2?: string;
 
-    @ApiProperty({ description: 'Correo electrónico del usuario', example: 'juan.perez@example.com' })
-    @IsEmail({}, { message: 'El correo electrónico no es válido' })
-    email: string;
+  @ApiProperty({
+    description: 'Correo electrónico del usuario',
+    example: 'juan.perez@example.com',
+  })
+  @IsEmail({}, { message: 'El correo electrónico no es válido' })
+  email: string;
 
-    @ApiProperty({ description: 'Contraseña en texto plano (será encriptada por el backend)', example: 'MiPasswordSeguro123' })
-    @IsString()
-    password_hash: string;
+  @ApiProperty({
+    description: 'Contraseña en texto plano (será encriptada por el backend)',
+    example: 'MiPasswordSeguro123',
+  })
+  @IsString()
+  password_hash: string;
 
-    @ApiPropertyOptional({ description: 'Número de teléfono del usuario', example: '3001234567' })
-    @IsOptional()
-    @IsString()
-    telefono?: string;
+  @ApiPropertyOptional({
+    description: 'Número de teléfono del usuario',
+    example: '3001234567',
+  })
+  @IsOptional()
+  @IsString()
+  telefono?: string;
 
-    @ApiPropertyOptional({ description: 'Estado de la cuenta. true=Activo, false=Inactivo', example: true, default: true })
-    @IsOptional()
-    @IsBoolean()
-    estado?: boolean;
+  @ApiPropertyOptional({
+    description: 'Estado de la cuenta. true=Activo, false=Inactivo',
+    example: true,
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  estado?: boolean;
 
-    @ApiPropertyOptional({ description: 'ID del rol asignado. 1=Admin, 2=Cliente, 3=Barbero', example: 2 })
-    @IsOptional()
-    @IsNumber()
-    id_rol?: number;
+  @ApiPropertyOptional({
+    description: 'ID del rol asignado. 1=Admin, 2=Cliente, 3=Barbero',
+    example: 2,
+  })
+  @IsOptional()
+  @IsNumber()
+  id_rol?: number;
 
-    @ApiPropertyOptional({ description: 'URL de la foto de perfil (generalmente desde Cloudinary)', example: 'https://res.cloudinary.com/mi-cloud/image/upload/v1234/foto.jpg' })
-    @IsOptional()
-    @IsString()
-    foto_perfil?: string;
+  @ApiPropertyOptional({
+    description: 'URL de la foto de perfil (generalmente desde Cloudinary)',
+    example: 'https://res.cloudinary.com/mi-cloud/image/upload/v1234/foto.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  foto_perfil?: string;
 }

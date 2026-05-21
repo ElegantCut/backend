@@ -4,11 +4,10 @@ import { BarbersRepository } from './barbers.repository';
 import { BarbersController } from './barbers.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 
-
 @Module({
-    imports: [PrismaModule],
-    controllers: [BarbersController],
-    providers: [BarbersService, BarbersRepository],
-    exports: [BarbersService],
+  imports: [PrismaModule],
+  controllers: [BarbersController],
+  providers: [BarbersService, BarbersRepository],
+  exports: [BarbersService],
 })
-export class BarbersModule { }
+export class BarbersModule {}

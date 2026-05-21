@@ -6,90 +6,102 @@ import { CrearPqrsDto } from './dto/create-pqrs.dto';
 
 @Injectable()
 export class PqrsService {
-    constructor(
-        private readonly pqrsRepo: PqrsRepository,
-        private readonly emailService: EmailService,
-        private readonly prisma: PrismaService,
-    ) { }
+  constructor(
+    private readonly pqrsRepo: PqrsRepository,
+    private readonly emailService: EmailService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-    async create(data: CrearPqrsDto) {
-        // Guardar PQRS en DB
-        const id = await this.pqrsRepo.create(data);
+  async create(data: CrearPqrsDto) {
+    // Guardar PQRS en DB
+    const id = await this.pqrsRepo.create(data);
 
-        // Enviar email de confirmación
-        const radicado = `PQRS-${id}-${new Date().getFullYear()}`;
+    // Enviar email de confirmación
+    const radicado = `PQRS-${id}-${new Date().getFullYear()}`;
 
-        await this.emailService.sendPqrsConfirmation(
-            data.email,
-            data.nombre_completo,
-            radicado,
-            data.tipo_solicitud
-        );
+    await this.emailService.sendPqrsConfirmation(
+      data.email,
+      data.nombre_completo,
+      radicado,
+      data.tipo_solicitud,
+    );
 
-        return { success: true, radicado: `PQRS-${id}-${new Date().getFullYear()}` };
+    return {
+      success: true,
+      radicado: `PQRS-${id}-${new Date().getFullYear()}`,
+    };
+  }
+
+  async searchByUser(email: string) {
+    return this.pqrsRepo.findByUserData(email);
+  }
+
+  async obtenerPqrs() {
+    return this.prisma.pqrs.findMany({
+      include: {
+        usuarios: {
+          select: { prim_nombre: true, email: true, telefono: true },
+        },
+      },
+    });
+  }
+
+  // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
+
+  async findOne(id: number) {
+    const pqrs = await this.prisma.pqrs.findUnique({
+      where: { id_pqrs: id },
+      include: {
+        usuarios: {
+          select: {
+            prim_nombre: true,
+            apellido1: true,
+            email: true,
+            telefono: true,
+          },
+        },
+      },
+    });
+
+    if (!pqrs) throw new NotFoundException(`PQRS con ID ${id} no encontrada`);
+    return pqrs;
+  }
+
+  async update(id: number, data: any) {
+    await this.findOne(id); // Verifica si existe
+
+    return await this.prisma.pqrs.update({
+      where: { id_pqrs: id },
+      data,
+    });
+  }
+
+  async findByRadicado(radicado: string) {
+    // Formato esperado: PQRS-{ID}-{AÑO}
+    const parts = radicado.split('-');
+    if (parts.length < 2 || parts[0].toUpperCase() !== 'PQRS') {
+      return { success: false, error: 'Formato de radicado inválido' };
     }
 
-    async searchByUser(email: string) {
-        return this.pqrsRepo.findByUserData(email);
+    // El ID es la segunda parte del radicado
+    const id = parseInt(parts[1], 10);
+    if (isNaN(id)) {
+      return { success: false, error: 'ID de radicado inválido' };
     }
 
-    async obtenerPqrs() {
-        return this.prisma.pqrs.findMany({
-            include: { usuarios: { select: { prim_nombre: true, email: true, telefono: true } } }
-        });
+    const pqrs = await this.prisma.pqrs.findUnique({
+      where: { id_pqrs: id },
+      select: {
+        estado: true,
+        fecha_creacion: true,
+        respuesta_admin: true,
+      },
+    });
+
+    if (!pqrs) {
+      return { success: false, error: 'No se encontró la PQRS' };
     }
 
-    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
-
-    async findOne(id: number) {
-        const pqrs = await this.prisma.pqrs.findUnique({
-            where: { id_pqrs: id },
-            include: {
-                usuarios: {
-                    select: { prim_nombre: true, apellido1: true, email: true, telefono: true }
-                }
-            }
-        });
-
-        if (!pqrs) throw new NotFoundException(`PQRS con ID ${id} no encontrada`);
-        return pqrs;
-    }
-
-    async update(id: number, data: any) {
-        await this.findOne(id); // Verifica si existe
-
-        return await this.prisma.pqrs.update({
-            where: { id_pqrs: id },
-            data,
-        });
-    }
-
-    async findByRadicado(radicado: string) {
-        // Formato esperado: PQRS-{ID}-{AÑO}
-        const parts = radicado.split('-');
-        if (parts.length < 2 || parts[0].toUpperCase() !== 'PQRS') {
-            return { success: false, error: 'Formato de radicado inválido' };
-        }
-        
-        // El ID es la segunda parte del radicado
-        const id = parseInt(parts[1], 10);
-        if (isNaN(id)) {
-            return { success: false, error: 'ID de radicado inválido' };
-        }
-
-        const pqrs = await this.prisma.pqrs.findUnique({
-            where: { id_pqrs: id },
-            select: {
-                estado: true,
-                fecha_creacion: true,
-                respuesta_admin: true
-            }
-        });
-
-        if (!pqrs) {
-            return { success: false, error: 'No se encontró la PQRS' };
-        }
-
-        return { success: true, data: pqrs };
-    }
+    return { success: true, data: pqrs };
+  }
 }
