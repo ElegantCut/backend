@@ -1,313 +1,206 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Injectable()
 export class AppointmentsService {
-  constructor(
-    private readonly appointmentsRepo: AppointmentsRepository,
-    private readonly usersRepo: UsersRepository,
-    private readonly prisma: PrismaService,
-  ) {}
+    constructor(
+        private readonly appointmentsRepo: AppointmentsRepository,
+        private readonly usersRepo: UsersRepository,
+    ) { }
 
-  async getAvailability(date: string, barberId: number) {
-    return this.appointmentsRepo.getAvailableSlots(date, barberId);
-  }
+    async getAvailability(date: string, barberId: number) {
+        return this.appointmentsRepo.getAvailableSlots(date, barberId);
+    }
 
-  async bookAppointment(data: any) {
-    // Aquí puedes incluir el flujo de buscar o crear usuario que estaba en el modelo viejo
-    return this.appointmentsRepo.create(data);
-  }
+    async bookAppointment(data: any) {
+        return this.appointmentsRepo.create(data);
+    }
 
-  async getAll() {
-    return this.appointmentsRepo.findAll();
-  }
+    async getAll() {
+        return this.appointmentsRepo.findAll();
+    }
 
-  // Nuevo método formateado específicamente para el listado del panel de Administrador
-  async findAllAdmin() {
-    try {
-      const citas = await this.prisma.reservas.findMany({
-        include: {
-          usuarios: true,
-          horarios: true,
-          detalle_cita_servicio: {
-            include: { servicios: true },
-          },
-        },
-        orderBy: { fecha: 'desc' },
-      });
+    // Nuevo método formateado específicamente para el listado del panel de Administrador
+    async findAllAdmin() {
+        try {
+            const citas = await this.appointmentsRepo.findAllWithDetails();
 
-      const data = citas.map((cita) => {
-        // Determinar estado textual sugerido (1=Pendiente, 2=Completada, 3=Cancelada)
-        let estadoText = 'Pendiente';
-        if (cita.id_estado_cita === 2) estadoText = 'Completada';
-        if (cita.id_estado_cita === 3) estadoText = 'Cancelada';
+            const data = citas.map(cita => {
+                // Determinar estado textual sugerido (1=Pendiente, 2=Completada, 3=Cancelada)
+                let estadoText = 'Pendiente';
+                if (cita.id_estado_cita === 2) estadoText = 'Completada';
+                if (cita.id_estado_cita === 3) estadoText = 'Cancelada';
 
-        // Extraer el nombre del servicio principal
-        const srv = cita.detalle_cita_servicio?.[0]?.servicios;
-        const nombreServicio = srv ? srv.nombre : 'Servicio general';
+                // Extraer el nombre del servicio principal
+                const srv = cita.detalle_cita_servicio?.[0]?.servicios;
+                const nombreServicio = srv ? srv.nombre : 'Servicio general';
 
-        // Formatear hora inicio (ej. 900 -> "9:00 AM")
-        let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
-        if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
-        const hh = horaStr.slice(0, 2);
-        const mm = horaStr.slice(2, 4);
-        const horaFormat = `${hh}:${mm}`;
+                // Formatear hora inicio (ej. 900 -> "9:00 AM")
+                let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
+                if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
+                const hh = horaStr.slice(0, 2);
+                const mm = horaStr.slice(2, 4);
+                const horaFormat = `${hh}:${mm}`;
 
-        return {
-          id_reservas: cita.id_reservas,
-          fecha: cita.fecha,
-          hora_inicio: horaFormat,
-          cliente: cita.usuarios
-            ? `${cita.usuarios.prim_nombre} ${cita.usuarios.apellido1}`
-            : 'Desconocido',
-          servicio: nombreServicio,
-          estado: estadoText,
+                return {
+                    id_reservas: cita.id_reservas,
+                    fecha: cita.fecha,
+                    hora_inicio: horaFormat,
+                    cliente: cita.usuarios ? `${cita.usuarios.prim_nombre} ${cita.usuarios.apellido1}` : 'Desconocido',
+                    servicio: nombreServicio,
+                    estado: estadoText
+                };
+            });
+
+            return { success: true, data };
+        } catch (error) {
+            console.error("Error fetching admin appointments:", error);
+            return { success: false, data: [] };
+        }
+    }
+
+    // Nuevo método formateado específicamente para el listado del panel de Administrador
+    async changeStatusAdmin(id: number, nuevoEstado: number) {
+        try {
+            console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
+            
+            const updated = await this.appointmentsRepo.updateAppointmentStatus(id, nuevoEstado);
+
+            return { 
+                success: true, 
+                message: `Cita ${id} actualizada con éxito`,
+                data: updated 
+            };
+        } catch (error) {
+            console.error(`[Admin Error] Falló actualización de cita ${id}:`, error.message);
+            return { 
+                success: false, 
+                message: 'No se pudo actualizar la cita. Verifique que el ID sea correcto.' 
+            };
+        }
+    }
+
+    async getAppointmentsByBarber(barberId: number) {
+        return await this.appointmentsRepo.findAppointmentsByBarber(barberId);
+    }
+
+    async createAppointment(datos: CreateAppointmentDto) {
+        const id_servicio = Number(datos.id_servicio);
+        const reservaData = {
+            fecha: new Date(datos.fecha),
+            observaciones: datos.observaciones,
+            id_usuario: Number(datos.id_usuario),
+            id_empleado: Number(datos.id_empleado),
+            id_estado_cita: Number(datos.id_estado_cita),
+            id_horarios: Number(datos.id_horarios),
         };
-      });
+        
+        const reserva = await this.appointmentsRepo.createAppointmentWithTransaction(reservaData, id_servicio);
 
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error fetching admin appointments:', error);
-      return { success: false, data: [] };
-    }
-  }
+        // --- INTEGRACIÓN CON n8n ---
+        try {
+            const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita'; 
+            
+            const reservaAny = reserva as any;
+            const datosAny = datos as any;
 
-  // Nuevo método formateado específicamente para el listado del panel de Administrador
-  async changeStatusAdmin(id: number, nuevoEstado: number) {
-    try {
-      console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
+            // Buscar el email del cliente en la BD como respaldo
+            const cliente = await this.appointmentsRepo.findUserByUserId(Number(datosAny.id_usuario));
 
-      const updated = await this.prisma.reservas.update({
-        where: { id_reservas: id },
-        data: { id_estado_cita: nuevoEstado },
-      });
+            // Priorizar lo que el cliente escribió en el formulario, sino usar BD
+            const emailFinal = datosAny.email_contacto || cliente?.email || '';
+            const nombreFinal = datosAny.nombre_contacto || `${cliente?.prim_nombre ?? ''} ${cliente?.apellido1 ?? ''}`.trim() || 'Cliente';
 
-      return {
-        success: true,
-        message: `Cita ${id} actualizada con éxito`,
-        data: updated,
-      };
-    } catch (error) {
-      console.error(
-        `[Admin Error] Falló actualización de cita ${id}:`,
-        error.message,
-      );
-      return {
-        success: false,
-        message:
-          'No se pudo actualizar la cita. Verifique que el ID sea correcto.',
-      };
-    }
-  }
+            const payload = {
+                evento: 'NUEVA_CITA',
+                id_reserva: reservaAny.id_reservas,
+                cliente_id: datosAny.id_usuario,
+                email_cliente: emailFinal,
+                nombre_cliente: nombreFinal,
+                fecha: datosAny.fecha,
+                observaciones: datosAny.observaciones
+            };
+            
+            console.log('PAYLOAD PARA N8N:', payload);
 
-  async getAppointmentsByBarber(barberId: number) {
-    return await this.prisma.reservas.findMany({
-      where: {
-        id_empleado: barberId,
-      },
-      include: {
-        usuarios: true,
-        horarios: true,
-        detalle_cita_servicio: {
-          include: {
-            servicios: true,
-          },
-        },
-      },
-    });
-  }
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error('Error enviando a n8n:', err));
+            
+            console.log('🚀 Evento de cita enviado a n8n');
+        } catch (error) {
+            console.warn('No se pudo enviar a n8n:', error);
+        }
 
-  async createAppointment(datos: CreateAppointmentDto) {
-    const id_servicio = Number(datos.id_servicio);
-    const reservaData = {
-      fecha: new Date(datos.fecha),
-      observaciones: datos.observaciones,
-      id_usuario: Number(datos.id_usuario),
-      id_empleado: Number(datos.id_empleado),
-      id_estado_cita: Number(datos.id_estado_cita),
-      id_horarios: Number(datos.id_horarios),
-    };
-
-    const reserva = await this.prisma.$transaction(async (tx) => {
-      // 1. Crear la reserva
-      const reservaResult = await tx.reservas.create({
-        data: reservaData,
-      });
-
-      // 2. Crear el detalle con el servicio
-      await tx.detalle_cita_servicio.create({
-        data: {
-          id_reservas: reservaResult.id_reservas,
-          id_servicio: id_servicio,
-        },
-      });
-
-      return reservaResult;
-    });
-
-    // --- INTEGRACIÓN CON n8n ---
-    try {
-      const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita';
-
-      const reservaAny = reserva as any;
-      const datosAny = datos as any;
-
-      // Buscar el email del cliente en la BD como respaldo
-      const cliente = await this.prisma.usuarios.findUnique({
-        where: { id_usuario: Number(datosAny.id_usuario) },
-        select: { email: true, prim_nombre: true, apellido1: true },
-      });
-
-      // Priorizar lo que el cliente escribió en el formulario, sino usar BD
-      const emailFinal = datosAny.email_contacto || cliente?.email || '';
-      const nombreFinal =
-        datosAny.nombre_contacto ||
-        `${cliente?.prim_nombre ?? ''} ${cliente?.apellido1 ?? ''}`.trim() ||
-        'Cliente';
-
-      const payload = {
-        evento: 'NUEVA_CITA',
-        id_reserva: reservaAny.id_reservas,
-        cliente_id: datosAny.id_usuario,
-        email_cliente: emailFinal,
-        nombre_cliente: nombreFinal,
-        fecha: datosAny.fecha,
-        observaciones: datosAny.observaciones,
-      };
-
-      console.log('PAYLOAD PARA N8N:', payload);
-
-      fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch((err) => console.error('Error enviando a n8n:', err));
-
-      console.log('🚀 Evento de cita enviado a n8n');
-    } catch (error) {
-      console.warn('No se pudo enviar a n8n:', error);
+        return reserva;
     }
 
-    return reserva;
-  }
-
-  async getHorarios() {
-    return await this.prisma.horarios.findMany({
-      orderBy: { hora_inicio: 'asc' },
-    });
-  }
-
-  // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
-
-  async findOne(id: number) {
-    const cita = await this.prisma.reservas.findUnique({
-      where: { id_reservas: id },
-      include: {
-        usuarios: {
-          select: {
-            prim_nombre: true,
-            apellido1: true,
-            telefono: true,
-            email: true,
-          },
-        },
-        estado_cita: true,
-        horarios: true,
-        detalle_cita_servicio: {
-          include: { servicios: true },
-        },
-      },
-    });
-
-    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
-    return cita;
-  }
-
-  async getAppointmentsByUser(userId: number) {
-    try {
-      const numericUserId = Number(userId);
-      const citas = await this.prisma.reservas.findMany({
-        where: { id_usuario: numericUserId },
-        include: {
-          horarios: true,
-          estado_cita: true,
-          detalle_cita_servicio: {
-            include: { servicios: true },
-          },
-        },
-        orderBy: { fecha: 'desc' },
-      });
-
-      return { success: true, data: citas };
-    } catch (error) {
-      console.error('Error fetching user appointments:', error);
-      return { success: false, data: [] };
-    }
-  }
-
-  async update(id: number, data: any) {
-    await this.findOne(id); // Verifica si existe
-
-    // Si mandan una fecha en string, la parseamos a Date
-    if (data.fecha) {
-      data.fecha = new Date(data.fecha);
+    async getHorarios() {
+        return await this.appointmentsRepo.findAllHorarios();
     }
 
-    return await this.prisma.reservas.update({
-      where: { id_reservas: id },
-      data: data,
-      include: { estado_cita: true },
-    });
-  }
+    // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
 
-  // --- MÉTODO PARA RECORDATORIOS (n8n) ---
-  async getTomorrowReminders() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
+    async findOne(id: number) {
+        const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+        if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+        return cita;
+    }
 
-    const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+    async getAppointmentsByUser(userId: number) {
+        try {
+            const numericUserId = Number(userId);
+            const citas = await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
 
-    const citas = await this.prisma.reservas.findMany({
-      where: {
-        fecha: {
-          gte: tomorrow,
-          lt: dayAfterTomorrow,
-        },
-        id_estado_cita: 1, // Solo pendientes
-      },
-      include: {
-        usuarios: true,
-        horarios: true,
-        detalle_cita_servicio: {
-          include: { servicios: true },
-        },
-      },
-    });
+            return { success: true, data: citas };
+        } catch (error) {
+            console.error("Error fetching user appointments:", error);
+            return { success: false, data: [] };
+        }
+    }
 
-    return citas.map((cita) => {
-      // Formatear hora inicio (900 -> "9:00")
-      let horaStr = cita.horarios?.hora_inicio?.toString() || '0000';
-      if (horaStr.length === 3) horaStr = '0' + horaStr;
-      const hh = horaStr.slice(0, 2);
-      const mm = horaStr.slice(2, 4);
+    async update(id: number, data: any) {
+        await this.findOne(id); // Verifica si existe
 
-      return {
-        id_reserva: cita.id_reservas,
-        cliente_nombre:
-          `${cita.usuarios?.prim_nombre ?? ''} ${cita.usuarios?.apellido1 ?? ''}`.trim() ||
-          'Cliente',
-        cliente_email: cita.usuarios?.email || '',
-        fecha: cita.fecha.toISOString().split('T')[0],
-        hora: `${hh}:${mm}`,
-        servicio:
-          cita.detalle_cita_servicio?.[0]?.servicios?.nombre ||
-          'Servicio Barbería',
-      };
-    });
-  }
+        // Si mandan una fecha en string, la parseamos a Date
+        if (data.fecha) {
+            data.fecha = new Date(data.fecha);
+        }
+
+        return await this.appointmentsRepo.updateAppointment(id, data);
+    }
+
+    // --- MÉTODO PARA RECORDATORIOS (n8n) ---
+    async getTomorrowReminders() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const dayAfterTomorrow = new Date(tomorrow);
+        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+        const citas = await this.appointmentsRepo.findTomorrowReminders(tomorrow, dayAfterTomorrow);
+
+        return citas.map(cita => {
+             // Formatear hora inicio (900 -> "9:00")
+             let horaStr = cita.horarios?.hora_inicio?.toString() || '0000';
+             if (horaStr.length === 3) horaStr = '0' + horaStr; 
+             const hh = horaStr.slice(0, 2);
+             const mm = horaStr.slice(2, 4);
+             
+             return {
+                 id_reserva: cita.id_reservas,
+                 cliente_nombre: `${cita.usuarios?.prim_nombre ?? ''} ${cita.usuarios?.apellido1 ?? ''}`.trim() || 'Cliente',
+                 cliente_email: cita.usuarios?.email || '',
+                 fecha: cita.fecha.toISOString().split('T')[0],
+                 hora: `${hh}:${mm}`,
+                 servicio: cita.detalle_cita_servicio?.[0]?.servicios?.nombre || 'Servicio Barbería'
+              };
+        });
+    }
 }
+
