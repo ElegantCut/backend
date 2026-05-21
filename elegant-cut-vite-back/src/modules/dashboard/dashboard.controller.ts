@@ -8,23 +8,31 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @ApiTags('Dashboard - Panel Administrativo')
 @Controller('dashboard')
 export class DashboardController {
-    constructor(private readonly dashboardService: DashboardService) { }
+  constructor(private readonly dashboardService: DashboardService) {}
 
-    @ApiBearerAuth()
-    @Roles(1) // Solo Admin
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @ApiOperation({ summary: 'Obtener estadísticas generales', description: 'Devuelve métricas como total de barberos, usuarios, citas, etc. para el dashboard.' })
-    @Get('stats')
-    async getStats() {
-        return this.dashboardService.getStats();
-    }
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({
+    summary: 'Obtener estadísticas generales',
+    description:
+      'Devuelve métricas como total de barberos, usuarios, citas, etc. para el dashboard.',
+  })
+  @Get('stats')
+  async getStats() {
+    return this.dashboardService.getStats();
+  }
 
-    @ApiBearerAuth()
-    @Roles(1) // Solo Admin
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @ApiOperation({ summary: 'Obtener actividad reciente', description: 'Devuelve la lista de los últimos registros o acciones recientes del sistema.' })
-    @Get('activity')
-    async getActivity() {
-        return this.dashboardService.getActivity();
-    }
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({
+    summary: 'Obtener actividad reciente',
+    description:
+      'Devuelve la lista de los últimos registros o acciones recientes del sistema.',
+  })
+  @Get('activity')
+  async getActivity() {
+    return this.dashboardService.getActivity();
+  }
 }

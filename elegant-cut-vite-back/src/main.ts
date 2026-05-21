@@ -4,13 +4,18 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // 1. Prefijo global para todas las rutas
   const cookieHandler = (cookieParser as any).default || cookieParser;
-  app.use(typeof cookieHandler === 'function' ? cookieHandler() : (cookieParser as any)());
+  app.use(
+    typeof cookieHandler === 'function'
+      ? cookieHandler()
+      : (cookieParser as any)(),
+  );
 
   app.setGlobalPrefix('api');
 
@@ -23,27 +28,40 @@ async function bootstrap() {
     }),
   );
 
+  // 2.5 Filtro de excepciones global para que todos los errores tengan el mismo formato
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   // 3. Habilitar CORS para conectar con Vite (Configuración robusta para cookies)
   app.enableCors({
     origin: true, // Permite cualquier origen que realice la petición
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-Requested-With',
+    ],
   });
 
   // 4. Configurar Swagger
   const config = new DocumentBuilder()
     .setTitle('Elegant Cut API')
-    .setDescription('Documentación de la API de Elegant Cut, para reservación de barberías.')
+    .setDescription(
+      'Documentación de la API de Elegant Cut, para reservación de barberías.',
+    )
     .setVersion('1.0')
-    .addBearerAuth({
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-      name: 'JWT',
-      description: 'Ingresa tu token JWT',
-      in: 'header',
-    }, 'bearer') // Nombre del esquema: 'bearer'
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Ingresa tu token JWT',
+        in: 'header',
+      },
+      'bearer',
+    ) // Nombre del esquema: 'bearer'
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

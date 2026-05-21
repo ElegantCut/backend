@@ -4,9 +4,9 @@ import { ServiceUController } from './serviceu.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [ServiceUController],
-    providers: [ServiceUService],
-    exports: [ServiceUService],
+  imports: [PrismaModule],
+  controllers: [ServiceUController],
+  providers: [ServiceUService],
+  exports: [ServiceUService],
 })
-export class ServiceUModule { }
+export class ServiceUModule {}

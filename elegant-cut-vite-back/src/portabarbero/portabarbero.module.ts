@@ -6,6 +6,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [PrismaModule],
   controllers: [PortabarberoController],
-  providers: [PortabarberoService]
+  providers: [PortabarberoService],
 })
-export class PortabarberoModule { }
+export class PortabarberoModule {}

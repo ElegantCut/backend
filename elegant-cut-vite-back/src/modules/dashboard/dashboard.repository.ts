@@ -3,69 +3,86 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class DashboardRepository {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async getSummaryStats() {
-        try {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+  async getSummaryStats() {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-            const [
-                citasHoyCount, 
-                citasPendientesCount, 
-                citasCompletadasCount, 
-                citasCanceladasCount, 
-                clientesNuevosCount,
-                pagosHoy
-            ] = await Promise.all([
-                this.prisma.reservas.count({ where: { fecha: { gte: today, lt: tomorrow } } }),
-                this.prisma.reservas.count({ where: { id_estado_cita: 1 } }),
-                this.prisma.reservas.count({ where: { id_estado_cita: 2 } }),
-                this.prisma.reservas.count({ where: { id_estado_cita: 3 } }),
-                this.prisma.usuarios.count({ where: { id_rol: 2, created_at: { gte: today, lt: tomorrow } } }),
-                this.prisma.pagos.findMany({ where: { fecha: { gte: today, lt: tomorrow } } })
-            ]);
+      const [
+        citasHoyCount,
+        citasPendientesCount,
+        citasCompletadasCount,
+        citasCanceladasCount,
+        clientesNuevosCount,
+        pagosHoy,
+      ] = await Promise.all([
+        this.prisma.reservas.count({
+          where: { fecha: { gte: today, lt: tomorrow } },
+        }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 1 } }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 2 } }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 3 } }),
+        this.prisma.usuarios.count({
+          where: { id_rol: 2, created_at: { gte: today, lt: tomorrow } },
+        }),
+        this.prisma.pagos.findMany({
+          where: { fecha: { gte: today, lt: tomorrow } },
+        }),
+      ]);
 
-            // Calcular ingresos de hoy (suma de valores en pagosHoy)
-            const ingresosHoy = pagosHoy.reduce((acc, pago) => acc + Number(pago.valor), 0);
+      // Calcular ingresos de hoy (suma de valores en pagosHoy)
+      const ingresosHoy = pagosHoy.reduce(
+        (acc, pago) => acc + Number(pago.valor),
+        0,
+      );
 
-            return {
-                success: true,
-                data: {
-                    citasHoy: citasHoyCount,
-                    ingresosHoy,
-                    clientesNuevos: clientesNuevosCount,
-                    citasPendientes: citasPendientesCount,
-                    citasCompletadas: citasCompletadasCount,
-                    citasCanceladas: citasCanceladasCount
-                }
-            };
-        } catch (error) {
-            console.error("Dashboard Stats Error:", Math.random() /* avoid minification */, error);
-            return {
-                success: false,
-                data: {
-                    citasHoy: 0, ingresosHoy: 0, clientesNuevos: 0,
-                    citasPendientes: 0, citasCompletadas: 0, citasCanceladas: 0
-                }
-            };
-        }
+      return {
+        success: true,
+        data: {
+          citasHoy: citasHoyCount,
+          ingresosHoy,
+          clientesNuevos: clientesNuevosCount,
+          citasPendientes: citasPendientesCount,
+          citasCompletadas: citasCompletadasCount,
+          citasCanceladas: citasCanceladasCount,
+        },
+      };
+    } catch (error) {
+      console.error(
+        'Dashboard Stats Error:',
+        Math.random() /* avoid minification */,
+        error,
+      );
+      return {
+        success: false,
+        data: {
+          citasHoy: 0,
+          ingresosHoy: 0,
+          clientesNuevos: 0,
+          citasPendientes: 0,
+          citasCompletadas: 0,
+          citasCanceladas: 0,
+        },
+      };
     }
+  }
 
-    async getRecentActivity() {
-        return this.prisma.reservas.findMany({
-            take: 10,
-            orderBy: { fecha: 'desc' },
-            select: {
-                id_reservas: true,
-                fecha: true,
-                id_estado_cita: true,
-                usuarios: {
-                    select: { prim_nombre: true, apellido1: true },
-                },
-            },
-        });
-    }
+  async getRecentActivity() {
+    return this.prisma.reservas.findMany({
+      take: 10,
+      orderBy: { fecha: 'desc' },
+      select: {
+        id_reservas: true,
+        fecha: true,
+        id_estado_cita: true,
+        usuarios: {
+          select: { prim_nombre: true, apellido1: true },
+        },
+      },
+    });
+  }
 }
