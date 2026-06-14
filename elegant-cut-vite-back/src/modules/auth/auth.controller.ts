@@ -92,8 +92,8 @@ export class AuthController {
       path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
-    const { token: jwt, ...data } = result;
-    return data;
+    // Retornamos el resultado completo incluyendo el token al igual que el login normal
+    return result;
   }
 
   @ApiBearerAuth()
