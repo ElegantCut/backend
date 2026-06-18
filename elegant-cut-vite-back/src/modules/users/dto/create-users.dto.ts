@@ -5,6 +5,8 @@ import {
   IsBoolean,
   IsNumber,
   IsDate,
+  IsNotEmpty,
+  MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -52,6 +54,8 @@ export class CrearUsuarioDto {
     example: 'MiPasswordSeguro123',
   })
   @IsString()
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @IsNotEmpty({ message: 'La contraseña es obligatoria' })
   password_hash: string;
 
   @ApiPropertyOptional({
