@@ -157,7 +157,7 @@ export class AppointmentsService {
             const citas = await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
 
             const data = citas.map(cita => {
-                let estadoText = cita.estado_cita?.nombre_estado || 'Pendiente';
+                let estadoText = cita.estado_cita?.confirmada ? 'Completada' : 'Pendiente';
                 
                 const srv = cita.detalle_cita_servicio?.[0]?.servicios;
                 const nombreServicio = srv ? srv.nombre : 'Servicio general';
