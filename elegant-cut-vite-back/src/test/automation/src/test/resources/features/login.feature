@@ -1,7 +1,8 @@
 # language: es
-Característica: Inicio de sesión en el sistema ElegantCut
+
+Característica: Inicio de sesión ElegantCut
 
   Escenario: Inicio de sesión exitoso con credenciales válidas
-    Dado que el usuario se encuentra en la pagina de inicio de sesion
-    Cuando el ingresa las credenciales de acceso correctas
-    Entonces el deberia ver la pantalla principal del sistema
+    Dado el usuario abre la aplicación
+    Cuando ingresa el usuario "pal" y la contraseña "123456"
+    Entonces el debería ver la pantalla principal del sistema

@@ -1,17 +1,19 @@
 package co.com.stepdefinitions;
 
 import co.com.tasks.DoLogin;
+import co.com.userinterfaces.DashboardPage;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import net.serenitybdd.annotations.Managed;
 import net.serenitybdd.screenplay.Actor;
 import net.serenitybdd.screenplay.abilities.BrowseTheWeb;
 import net.serenitybdd.screenplay.actions.Open;
-import net.serenitybdd.annotations.Managed;
-import org.openqa.selenium.WebDriver;
 import net.serenitybdd.screenplay.ensure.Ensure;
-import co.com.userinterfaces.DashboardPage;
+import net.serenitybdd.screenplay.matchers.WebElementStateMatchers;
+import net.serenitybdd.screenplay.waits.WaitUntil;
+import org.openqa.selenium.WebDriver;
 
 public class LoginStepDefinitions {
 
@@ -25,22 +27,28 @@ public class LoginStepDefinitions {
         user.can(BrowseTheWeb.with(herBrowser));
     }
 
-    @Given("que el usuario se encuentra en la pagina de inicio de sesion")
-    public void queElUsuarioSeEncuentraEnLaPaginaDeInicioDeSesion() {
+    @Given("el usuario abre la aplicación")
+    public void elUsuarioAbreLaAplicacion() {
         user.wasAbleTo(Open.url("http://localhost:5173/login"));
     }
 
-    @When("el ingresa las credenciales de acceso correctas")
-    public void elIngresaLasCredencialesDeAccesoCorrectas() {
+    @When("ingresa el usuario {string} y la contraseña {string}")
+    public void ingresaElUsuarioYLaContrasena(String usuario, String password) {
+
         user.attemptsTo(
-                DoLogin.withCredentials("pal", "123456"));
+                DoLogin.withCredentials(usuario, password));
     }
 
-    @Then("el deberia ver la pantalla principal del sistema")
+    @Then("el debería ver la pantalla principal del sistema")
     public void elDeberiaVerLaPantallaPrincipalDelSistema() {
-        // La prueba se asegura (Ensure) de que el título del Dashboard sea visible en
-        // pantalla
+
         user.attemptsTo(
-                Ensure.that(DashboardPage.MAIN_TITLE).isDisplayed());
-    } // <-- LLAVE PARA CERRAR EL MÉTODO!
-} // Aquí cierra la clase LoginStepDefinitions
+                WaitUntil.the(DashboardPage.BRAND_NAME,
+                        WebElementStateMatchers.isVisible()).forNoMoreThan(10).seconds(),
+
+                Ensure.that(DashboardPage.BRAND_NAME).isDisplayed(),
+
+                Ensure.that(
+                        BrowseTheWeb.as(user).getDriver().getCurrentUrl()).contains("http://localhost:5173/"));
+    }
+}

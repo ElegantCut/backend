@@ -26,7 +26,7 @@ public class DoLogin implements Task {
     @Step("{0} realiza el inicio de sesión")
     public <T extends Actor> void performAs(T actor) {
         actor.attemptsTo(
-                Enter.theValue(username).into(LoginForm.INPUT_USERNAME), // Corregido el cierre del paréntesis
+                Enter.theValue(username).into(LoginForm.INPUT_USERNAME),
                 Enter.theValue(password).into(LoginForm.INPUT_PASSWORD),
                 Click.on(LoginForm.BUTTON_SUBMIT));
     }

@@ -1,4 +1,21 @@
 -------------------------------------------------------------------------------
 Test set: co.com.runners.MainRunner
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.128 s -- in co.com.runners.MainRunner
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 23.76 s <<< FAILURE! -- in co.com.runners.MainRunner
+Inicio de sesión en el sistema ElegantCut.Inicio de sesión exitoso con credenciales válidas -- Time elapsed: 23.41 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expected: an element that is visible
+     but: no matching element found by [Nombre de la marca located with: css: .header-brand-name]
+	at net.serenitybdd.screenplay.ErrorTally.throwSummaryExceptionFrom(ErrorTally.java:38)
+	at net.serenitybdd.screenplay.ErrorTally.reportAnyErrors(ErrorTally.java:32)
+	at net.serenitybdd.screenplay.Actor.should(Actor.java:397)
+	at net.serenitybdd.screenplay.waits.WaitUntilBuilder$1.performAs(WaitUntilBuilder.java:29)
+	at net.serenitybdd.screenplay.Actor.performTask(Actor.java:299)
+	at net.serenitybdd.screenplay.Actor.perform(Actor.java:274)
+	at net.serenitybdd.screenplay.Actor.performSilently(Actor.java:254)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:211)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:222)
+	at co.com.stepdefinitions.LoginStepDefinitions.elDeberiaVerLaPantallaPrincipalDelSistema(LoginStepDefinitions.java:45)
+	at ✽.el debería ver la pantalla principal del sistema(classpath:features/login.feature:8)
+
