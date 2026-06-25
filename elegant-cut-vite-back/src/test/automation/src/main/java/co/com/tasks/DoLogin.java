@@ -6,7 +6,7 @@ import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.Tasks;
 import net.serenitybdd.screenplay.actions.Click;
 import net.serenitybdd.screenplay.actions.Enter;
-import net.thucydides.core.annotations.Step;
+import net.serenitybdd.annotations.Step;
 
 public class DoLogin implements Task {
 
@@ -26,9 +26,9 @@ public class DoLogin implements Task {
     @Step("{0} realiza el inicio de sesión")
     public <T extends Actor> void performAs(T actor) {
         actor.attemptsTo(
-            Enter.theValue(username).into(LoginForm.TXT_USERNAME),
-            Enter.theValue(password).into(LoginForm.TXT_PASSWORD),
-            Click.on(LoginForm.BTN_LOGIN)
+            Enter.theValue(username).into(LoginForm.INPUT_EMAIL),
+            Enter.theValue(password).into(LoginForm.INPUT_PASSWORD),
+            Click.on(LoginForm.BUTTON_SUBMIT)
         );
     }
 }

@@ -26,7 +26,7 @@ public class LoginStepDefinitions {
     @Given("que el usuario se encuentra en la pagina de inicio de sesion")
     public void queElUsuarioSeEncuentraEnLaPaginaDeInicioDeSesion() {
         // Reemplaza con la URL local o de pruebas de tu frontend de ElegantCut
-        user.wasAbleTo(Open.url("http://localhost:5173/login")); 
+        user.wasAbleTo(Open.url("http://localhost:2008/login")); 
     }
 
     @When("el ingresa las credenciales de acceso correctas")
@@ -38,7 +38,7 @@ public class LoginStepDefinitions {
     }
 
     @Then("el deberia ver la pantalla principal del sistema")
-    public void elDeberiaVerLaPantallaPrincipal delSistema() {
+    public void elDeberiaVerLaPantallaPrincipalDelSistema() {
         // Ejemplo de validación (Descoméntalo cuando tengas tu cuestionario o elemento visual del Home)
         // user.attemptsTo(
         //     Ensure.that(Target.the("Título del Dashboard").locatedBy("//h1")).isDisplayed()

@@ -60,6 +60,22 @@
             <scope>test</scope>
         </dependency>
         
+        <!-- JUnit 4 (Para @RunWith de MainRunner) -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- JUnit Vintage (Para ejecutar tests de JUnit 4 como MainRunner.java en JUnit Platform) -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        
         <!-- SLF4J Logger -->
         <dependency>
             <groupId>org.slf4j</groupId>
