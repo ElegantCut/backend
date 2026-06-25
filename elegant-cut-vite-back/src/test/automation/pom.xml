@@ -83,7 +83,17 @@
             <version>2.0.12</version>
             <scope>test</scope>
         </dependency>
+
+    
+        <!--Ensure -->
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-ensure</artifactId>
+            <version>${serenity.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+    
 
     <build>
         <plugins>
