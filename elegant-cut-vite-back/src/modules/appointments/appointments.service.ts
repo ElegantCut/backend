@@ -156,7 +156,31 @@ export class AppointmentsService {
             const numericUserId = Number(userId);
             const citas = await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
 
-            return { success: true, data: citas };
+            const data = citas.map(cita => {
+                let estadoText = cita.estado_cita?.nombre_estado || 'Pendiente';
+                
+                const srv = cita.detalle_cita_servicio?.[0]?.servicios;
+                const nombreServicio = srv ? srv.nombre : 'Servicio general';
+                const precio = srv ? srv.precio : 0;
+
+                let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
+                if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
+                const hh = horaStr.slice(0, 2);
+                const mm = horaStr.slice(2, 4);
+                const horaFormat = `${hh}:${mm}`;
+
+                return {
+                    id: cita.id_reservas,
+                    fecha: cita.fecha,
+                    hora: horaFormat,
+                    servicio: nombreServicio,
+                    precio: precio,
+                    estado: estadoText,
+                    observaciones: cita.observaciones
+                };
+            });
+
+            return { success: true, data };
         } catch (error) {
             console.error("Error fetching user appointments:", error);
             return { success: false, data: [] };
