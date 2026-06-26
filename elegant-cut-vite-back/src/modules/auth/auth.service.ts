@@ -76,10 +76,24 @@ export class AuthService {
   }
 
   async register(registerDto: CrearUsuarioDto) {
-    return await this.usersService.crearUsuario({
+    const user = await this.usersService.crearUsuario({
       ...registerDto,
       id_rol: registerDto.id_rol || 2,
     });
+
+    return {
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      user: {
+        id_usuario: user.id_usuario,
+        username: user.username,
+        email: user.email,
+        name: `${user.prim_nombre} ${user.apellido1}`,
+        role: 'cliente',
+        id_rol: user.id_rol,
+        userId: user.id_usuario,
+      },
+    };
   }
 
   async traerUsuarios() {

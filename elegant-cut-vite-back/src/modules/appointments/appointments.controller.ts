@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Query,
   Param,
@@ -103,5 +104,35 @@ export class AppointmentsController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.findOne(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Reprogramar una cita',
+    description: 'Permite al cliente reprogramar su cita (cambiar fecha y/o horario) si está en estado Pendiente.',
+  })
+  @ApiParam({ name: 'id', description: 'ID de la reserva a reprogramar', example: 1 })
+  @Patch(':id/reschedule')
+  async reschedule(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { userId: number; fecha: string; id_horarios: number; id_empleado?: number },
+  ) {
+    return this.appointmentsService.rescheduleAppointment(id, body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Cancelar una cita (Cliente)',
+    description: 'Permite al cliente cancelar su propia cita si está en estado Pendiente.',
+  })
+  @ApiParam({ name: 'id', description: 'ID de la reserva a cancelar', example: 1 })
+  @Patch(':id/cancel')
+  async cancel(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { userId: number },
+  ) {
+    return this.appointmentsService.cancelAppointment(id, body.userId);
   }
 }
