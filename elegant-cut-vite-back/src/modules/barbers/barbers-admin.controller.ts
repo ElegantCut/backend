@@ -37,8 +37,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('barbers')
 export class BarbersAdminController {
-  constructor(private readonly barbersService: BarbersService) {}
-
+  constructor(private readonly barbersService: BarbersService) { }
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Obtener todos los barberos (Admin)' })
   @ApiOperation({
     description:
@@ -58,14 +60,18 @@ export class BarbersAdminController {
       return { success: false, message: 'Error interno al crear el barbero' };
     }
   }
-
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Alternar estado del barbero' })
   @ApiParam({ name: 'id', description: 'ID del barbero' })
   @Put(':id/toggle')
   async toggleStatus(@Param('id', ParseIntPipe) id: number) {
     return this.barbersService.toggleStatus(id);
   }
-
+  @ApiBearerAuth()
+  @Roles(1, 3) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Actualizar datos de barbero (Admin)' })
   @ApiParam({ name: 'id', description: 'ID del barbero a editar', example: 1 })
   @ApiResponse({
@@ -79,7 +85,9 @@ export class BarbersAdminController {
   ) {
     return this.barbersService.update(id, updateBarberDto);
   }
-
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Desactivar/Eliminar barbero (Admin)' })
   @ApiParam({
     name: 'id',
