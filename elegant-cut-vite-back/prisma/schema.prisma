@@ -121,6 +121,7 @@ model usuarios {
   barberos_servicios                   barberos_servicios[]
   portafolios                          portafolios?
   pqrs                                 pqrs[]
+  notificaciones                       notificaciones[]
   resenas_resenas_id_clienteTousuarios resenas[]            @relation("resenas_id_clienteTousuarios")
   resenas_recibidas                    resenas[]            @relation("ResenasBarbero")
   reservas                             reservas[]
@@ -219,4 +220,16 @@ enum pqrs_estado {
   En_Proceso @map("En Proceso")
   Resuelto
   Cerrado
+}
+
+model notificaciones {
+  id_notificacion Int       @id @default(autoincrement())
+  titulo          String    @db.VarChar(100)
+  mensaje         String    @db.Text
+  fecha           DateTime? @default(now()) @db.DateTime(0)
+  leida           Boolean?  @default(false)
+  id_usuario      Int
+  usuarios        usuarios  @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: Restrict, map: "fk_usuario_notificacion")
+
+  @@index([id_usuario], map: "fk_usuario_notificacion")
 }

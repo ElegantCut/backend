@@ -26,14 +26,17 @@ export class DashboardController {
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="Reporte_Estadisticas.pdf"',
+        'Content-Disposition':
+          'attachment; filename="Reporte_Estadisticas.pdf"',
         'Content-Length': pdfBuffer.length,
       });
 
       res.end(pdfBuffer);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      res.status(500).json({ success: false, message: 'No se pudo generar el reporte PDF' });
+      res
+        .status(500)
+        .json({ success: false, message: 'No se pudo generar el reporte PDF' });
     }
   }
 
