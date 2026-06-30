@@ -15,6 +15,7 @@ import { EmailModule } from './modules/email/email.module';
 import { PortabarberoModule } from './portabarbero/portabarbero.module';
 import { ServiceUModule } from './modules/service_u/service_u.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     PortabarberoModule,
     UploadsModule,
     ServiceUModule,
+    NotificationsModule,
   ],
 })
 export class AppModule implements NestModule {

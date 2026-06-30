@@ -12,4 +12,4 @@ import { AppointmentsAdminController } from './appointments.admin.controller';
   providers: [AppointmentsService, AppointmentsRepository],
   exports: [AppointmentsService, AppointmentsRepository],
 })
-export class AppointmentsModule { }
+export class AppointmentsModule {}

@@ -74,7 +74,10 @@ export class BarbersAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Actualizar datos de barbero (Admin)' })
   @ApiParam({ name: 'id', description: 'ID del barbero a editar', example: 1 })
-  @ApiResponse({ status: 200, description: 'Barbero actualizado exitosamente.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Barbero actualizado exitosamente.',
+  })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -86,7 +89,11 @@ export class BarbersAdminController {
   @Roles(1) // Solo Admin
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Desactivar/Eliminar barbero (Admin)' })
-  @ApiParam({ name: 'id', description: 'ID del barbero a desactivar', example: 1 })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del barbero a desactivar',
+    example: 1,
+  })
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.barbersService.remove(id);
