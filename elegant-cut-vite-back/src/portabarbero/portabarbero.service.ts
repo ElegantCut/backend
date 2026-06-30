@@ -6,17 +6,31 @@ import { CreatePortaDto } from './dto/porta.dto';
 export class PortabarberoService {
   constructor(private prisma: PrismaService) {}
 
-  // creamos la lógica del metodo post
+  // creamos la lógica del metodo post (ahora soporta upsert para permitir actualización)
   async crearPortafolio(datos: CreatePortaDto) {
-    return await this.prisma.portafolios.create({
-      data: {
-        ...datos,
-        especialidades: datos.especialidades
-          ? JSON.stringify(datos.especialidades)
-          : undefined,
-        fotos_portafolio: datos.fotos_portafolio
-          ? JSON.stringify(datos.fotos_portafolio)
-          : undefined,
+    const specs = datos.especialidades
+      ? JSON.stringify(datos.especialidades)
+      : undefined;
+    const fotos = datos.fotos_portafolio
+      ? JSON.stringify(datos.fotos_portafolio)
+      : undefined;
+
+    return await this.prisma.portafolios.upsert({
+      where: { id_usuario: Number(datos.id_usuario) },
+      update: {
+        biografia: datos.biografia,
+        experiencia: datos.experiencia,
+        instagram: datos.instagram,
+        especialidades: specs,
+        fotos_portafolio: fotos,
+      },
+      create: {
+        id_usuario: Number(datos.id_usuario),
+        biografia: datos.biografia,
+        experiencia: datos.experiencia,
+        instagram: datos.instagram,
+        especialidades: specs,
+        fotos_portafolio: fotos,
       },
     });
   }
