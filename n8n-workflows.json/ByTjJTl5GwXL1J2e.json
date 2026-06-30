@@ -1,0 +1,193 @@
+{
+  "updatedAt": "2026-06-30T01:45:18.778Z",
+  "createdAt": "2026-04-07T03:14:51.812Z",
+  "id": "ByTjJTl5GwXL1J2e",
+  "name": "My workflow 2",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f4522826-791a-4b33-8260-7115636722f9",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "http://backend:3001/api/appointments/reminders/tomorrow",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        16
+      ],
+      "id": "8025e6bd-13c9-47e2-ade6-06a1098fd33d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Actúa como el asistente virtual de Elegant Cut. \nCrea un recordatorio muy corto, elegante y profesional para el cliente {{ $json.cliente_nombre }}.\nRecuérdale que tiene una cita de {{ $json.servicio }} mañana {{ $json.fecha }} a las {{ $json.hora }}.\nDile que lo esperamos con gusto.\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        416,
+        16
+      ],
+      "id": "411cf15e-19de-4e08-8ac9-ed482ac4a920",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        224
+      ],
+      "id": "090d54b9-be1c-4efe-b741-b6a291d49840",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "I02l8H5gr63ncpEu",
+          "name": "Google Gemini(PaLM) Api account 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "jn147860@gmail.com",
+        "toEmail": "={{ $('HTTP Request').item.json.cliente_email }}",
+        "subject": "Recordatorio: Cita en Elegant Cut ✂️",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        16
+      ],
+      "id": "d71c2af8-8482-499b-bd9f-7c402375cf38",
+      "name": "Send an Email",
+      "webhookId": "8abc9786-bf0a-4001-b9dd-8c98e8d7f591",
+      "credentials": {
+        "smtp": {
+          "id": "g72bxN94mOVqHLV0",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "6b476513-5d38-407d-8012-c15fcb0b8e46",
+  "activeVersionId": null,
+  "versionCounter": 33,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-06-29T22:20:19.342Z",
+      "createdAt": "2026-06-29T22:20:19.342Z",
+      "role": "workflow:owner",
+      "workflowId": "ByTjJTl5GwXL1J2e",
+      "projectId": "4zmx3F71WzJJHskB",
+      "project": {
+        "updatedAt": "2026-06-26T03:35:13.618Z",
+        "createdAt": "2026-06-25T05:30:53.481Z",
+        "id": "4zmx3F71WzJJHskB",
+        "name": "Luis Angel Leal Molina <angellealmolina30@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "93cbb39f-5647-4fea-9475-32212b942691"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

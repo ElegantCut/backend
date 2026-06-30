@@ -1,0 +1,168 @@
+{
+  "updatedAt": "2026-06-30T20:31:03.110Z",
+  "createdAt": "2026-04-06T18:40:52.938Z",
+  "id": "EUOkzfa4Kiz9AkpR",
+  "name": "My workflow",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nueva-cita",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "ff9c0732-2a2c-44d1-878e-ebce941de2fb",
+      "name": "Webhook",
+      "webhookId": "4eb8916d-5175-476d-bf2b-d736ee36d5f4"
+    },
+    {
+      "parameters": {
+        "fromEmail": "jn147860@gmail.com",
+        "toEmail": "={{ $('Webhook').first().json.body.email_cliente }}",
+        "subject": "Confirmación de cita en Elegant Cut ✂️",
+        "html": "=={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "38bd1725-066d-43a8-8565-4027b33d1c5b",
+      "name": "Send an Email",
+      "webhookId": "5097a3ab-b8fa-402a-8328-e4fed6ac88f1",
+      "credentials": {
+        "smtp": {
+          "id": "g72bxN94mOVqHLV0",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        96,
+        192
+      ],
+      "id": "b5d465b2-02ae-4f9e-b917-303d5b3487f5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "I02l8H5gr63ncpEu",
+          "name": "Google Gemini(PaLM) Api account 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Nueva cita en Elegant Cut:\n- Fecha: {{ $('Webhook').item.json.body.fecha }}\n- Observaciones: {{ $('Webhook').item.json.body.observaciones }}\n\nRedacta un mensaje de confirmación amigable en español, máximo 2 líneas.\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Eres un asistente amable de la barbería Elegant Cut. Responde siempre en español de forma profesional y cordial."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "name": "Basic LLM Chain",
+      "position": [
+        64,
+        0
+      ],
+      "id": "21206db9-dbcd-4a6d-83bc-2a298b9d1e5f"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "a1039f78-57b8-4d5f-9e6b-5a24aa3aae02",
+  "activeVersionId": "a1039f78-57b8-4d5f-9e6b-5a24aa3aae02",
+  "versionCounter": 82,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-06-29T22:20:19.315Z",
+      "createdAt": "2026-06-29T22:20:19.315Z",
+      "role": "workflow:owner",
+      "workflowId": "EUOkzfa4Kiz9AkpR",
+      "projectId": "4zmx3F71WzJJHskB",
+      "project": {
+        "updatedAt": "2026-06-26T03:35:13.618Z",
+        "createdAt": "2026-06-25T05:30:53.481Z",
+        "id": "4zmx3F71WzJJHskB",
+        "name": "Luis Angel Leal Molina <angellealmolina30@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "93cbb39f-5647-4fea-9475-32212b942691"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version a1039f78",
+    "description": ""
+  }
+}
