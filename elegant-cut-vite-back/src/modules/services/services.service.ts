@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ServicesRepository } from './services.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CrearServicioDto } from './dto/create-servicio.dto';
+import { buildCloudinaryUrl } from '../../common/helpers/cloudinary-url.helper';
 
 @Injectable()
 export class ServicesService {
@@ -11,7 +12,11 @@ export class ServicesService {
   ) {}
 
   async findAll() {
-    return this.servicesRepo.findAll();
+    const servicios = await this.servicesRepo.findAll();
+    return servicios.map((s: any) => ({
+      ...s,
+      imagen_url: buildCloudinaryUrl(s.imagen),
+    }));
   }
 
   async findAllAdmin() {
@@ -27,6 +32,7 @@ export class ServicesService {
         descripcion: s.descripcion,
         precio: s.precio,
         duracion_minutos: s.duracion,
+        imagen_url: buildCloudinaryUrl(s.imagen),
       }));
 
       return { success: true, data };
