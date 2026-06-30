@@ -11,12 +11,19 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UseGuards } from '@nestjs/common';
 
 @ApiTags('Admin - Administradores')
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly usersService: UsersService) {}
-
+  constructor(private readonly usersService: UsersService) { }
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({
     summary: 'Obtener administradores',
     description:
@@ -26,7 +33,9 @@ export class AdminController {
   async getAdministrators() {
     return this.usersService.findAllAdmins();
   }
-
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Crear nuevo administrador' })
   @Post('administrators')
   async createAdmin(@Body() data: CrearUsuarioDto) {
@@ -36,13 +45,17 @@ export class AdminController {
       id_rol: 1,
     });
   }
-
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Actualizar administrador' })
   @Patch('administrators/:id')
   async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
     return this.usersService.update(id, data);
   }
-
+  @ApiBearerAuth()
+  @Roles(1) // Solo Admin
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Cambiar estado del administrador' })
   @Put('administrators/:id/toggle')
   async toggleStatus(@Param('id', ParseIntPipe) id: number) {

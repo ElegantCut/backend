@@ -30,7 +30,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @ApiTags('Barbers - Barberos')
 @Controller('barbers')
 export class BarbersController {
-  constructor(private readonly barbersService: BarbersService) {}
+  constructor(private readonly barbersService: BarbersService) { }
 
   @ApiOperation({
     summary: 'Obtener barberos según el rol de quien consulta',
@@ -91,7 +91,7 @@ export class BarbersController {
       'Registra un nuevo usuario con el rol 3 (Barbero) y encripta su contraseña.',
   })
   @ApiResponse({ status: 201, description: 'Barbero creado exitosamente.' })
-  @Post()
+  @Post('create')
   @UseInterceptors(FileInterceptor('image'))
   async crearBarbero(
     @Body() createBarberDto: CreateBarberDto,
@@ -134,7 +134,7 @@ export class BarbersController {
   }
 
   @ApiBearerAuth()
-  @Roles(1) // Solo Admin
+  @Roles(1, 3) // Solo Admin
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({
     summary: 'Actualizar datos de barbero (Admin)',
