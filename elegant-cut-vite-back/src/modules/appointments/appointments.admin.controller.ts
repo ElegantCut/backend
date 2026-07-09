@@ -20,10 +20,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-// ─── SOLID: SRP ───────────────────────────────────────────────────────────────
+
+
 // Controlador exclusivo para la gestión interna de citas por parte del
 // Staff (Administradores y Barberos).
-// ──────────────────────────────────────────────────────────────────────────────
+
 @ApiTags('Appointments - Administración')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard) // Guard a nivel de clase

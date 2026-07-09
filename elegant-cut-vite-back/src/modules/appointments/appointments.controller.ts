@@ -21,10 +21,8 @@ import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-// ─── SOLID: SRP ───────────────────────────────────────────────────────────────
 // Controlador exclusivo para que los clientes vean disponibilidad,
 // reserven citas y vean sus propias reservas.
-// ──────────────────────────────────────────────────────────────────────────────
 @ApiTags('Appointments - Citas y Reservas')
 @Controller('appointments')
 export class AppointmentsController {

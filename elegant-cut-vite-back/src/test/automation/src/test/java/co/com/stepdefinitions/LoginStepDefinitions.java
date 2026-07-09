@@ -40,7 +40,7 @@ public class LoginStepDefinitions {
     @Cuando("el ingresa las credenciales de acceso correctas")
     public void elIngresaLasCredencialesDeAccesoCorrectas() {
         user.attemptsTo(
-                DoLogin.withCredentials("pal", "123456"));
+                DoLogin.withCredentials("pal", "12345678"));
         pause(3);
     }
 
