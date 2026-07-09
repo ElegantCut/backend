@@ -21,8 +21,6 @@ import { NotificationsModule } from './notifications/notifications.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // En Docker, las variables llegan del docker-compose environment:, no de un .env
-      // ignoreEnvFile evita que NestJS busque un .env inexistente y pierda las vars del proceso
       ignoreEnvFile:
         process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL,
     }),

@@ -1,4 +1,136 @@
 -------------------------------------------------------------------------------
 Test set: co.com.runners.MainRunner
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 58.40 s -- in co.com.runners.MainRunner
+Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 21.80 s <<< FAILURE! -- in co.com.runners.MainRunner
+Verificar la pagina principal del sistema ElegantCut.Despues de iniciar sesion el usuario ve la pagina principal -- Time elapsed: 12.25 s <<< ERROR!
+org.openqa.selenium.NoSuchElementException: 
+no such element: Unable to locate element: {"method":"css selector","selector":"#login\-usuario"}
+  (Session info: chrome=149.0.7827.201)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: '4.16.1', revision: '9b4c83354e'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '21.0.11'
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [7a4cc454834b17e7edbc8f55766d573c, findElement {using=id, value=login-usuario}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 149.0.7827.201, chrome: {chromedriverVersion: 149.0.7827.155 (07b52360cc1..., userDataDir: C:\Users\jn147\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:61961}, goog:processID: 28588, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:61961/devtoo..., se:cdpVersion: 149.0.7827.201, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: 7a4cc454834b17e7edbc8f55766d573c
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.createException(W3CHttpResponseCodec.java:200)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:133)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:52)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:191)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:200)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:175)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:523)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:66)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:360)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:354)
+	at net.thucydides.core.webdriver.WebDriverFacade.findElement(WebDriverFacade.java:259)
+	at net.serenitybdd.core.pages.WebElementResolverByLocator.resolveForDriver(WebElementResolverByLocator.java:25)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.getResolvedElement(WebElementFacadeImpl.java:188)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.getElement(WebElementFacadeImpl.java:183)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.lambda$type$2(WebElementFacadeImpl.java:745)
+	at net.serenitybdd.core.pages.WithRetries.perform(WithRetries.java:22)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.type(WebElementFacadeImpl.java:744)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget.lambda$performAs$0(EnterValueIntoTarget.java:19)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget.performAs(EnterValueIntoTarget.java:18)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget$ByteBuddy$bOqWo1OL.performAs$accessor$uHQZhr3j(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at net.thucydides.core.steps.StepInterceptor.invokeMethod(StepInterceptor.java:519)
+	at net.thucydides.core.steps.StepInterceptor.executeTestStepMethod(StepInterceptor.java:499)
+	at net.thucydides.core.steps.StepInterceptor.runTestStep(StepInterceptor.java:471)
+	at net.thucydides.core.steps.StepInterceptor.runOrSkipMethod(StepInterceptor.java:213)
+	at net.thucydides.core.steps.StepInterceptor.testStepResult(StepInterceptor.java:200)
+	at net.thucydides.core.steps.StepInterceptor.intercept(StepInterceptor.java:92)
+	at net.thucydides.core.steps.ProxyConfiguration$InterceptorDispatcher.intercept(ProxyConfiguration.java:51)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget$ByteBuddy$bOqWo1OL.performAs(Unknown Source)
+	at net.serenitybdd.screenplay.Actor.performTask(Actor.java:299)
+	at net.serenitybdd.screenplay.Actor.perform(Actor.java:274)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:215)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:222)
+	at co.com.tasks.DoLogin.performAs(DoLogin.java:28)
+	at co.com.tasks.DoLogin$ByteBuddy$EZiCi6IX.performAs$accessor$qseUhkhD(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at net.thucydides.core.steps.StepInterceptor.invokeMethod(StepInterceptor.java:519)
+	at net.thucydides.core.steps.StepInterceptor.executeTestStepMethod(StepInterceptor.java:499)
+	at net.thucydides.core.steps.StepInterceptor.runTestStep(StepInterceptor.java:471)
+	at net.thucydides.core.steps.StepInterceptor.runOrSkipMethod(StepInterceptor.java:213)
+	at net.thucydides.core.steps.StepInterceptor.testStepResult(StepInterceptor.java:200)
+	at net.thucydides.core.steps.StepInterceptor.intercept(StepInterceptor.java:92)
+	at net.thucydides.core.steps.ProxyConfiguration$InterceptorDispatcher.intercept(ProxyConfiguration.java:51)
+	at co.com.tasks.DoLogin$ByteBuddy$EZiCi6IX.performAs(Unknown Source)
+	at net.serenitybdd.screenplay.Actor.performTask(Actor.java:299)
+	at net.serenitybdd.screenplay.Actor.perform(Actor.java:274)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:215)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:222)
+	at co.com.stepdefinitions.LoginStepDefinitions.elUsuarioIngresaSusCredencialesValidas(LoginStepDefinitions.java:65)
+	at ✽.el usuario ingresa sus credenciales validas(classpath:features/index.feature:6)
+
+Inicio de sesión en el sistema ElegantCut.Inicio de sesión exitoso con credenciales válidas -- Time elapsed: 8.913 s <<< ERROR!
+org.openqa.selenium.NoSuchElementException: 
+no such element: Unable to locate element: {"method":"css selector","selector":"#login\-usuario"}
+  (Session info: chrome=149.0.7827.201)
+For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Build info: version: '4.16.1', revision: '9b4c83354e'
+System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '21.0.11'
+Driver info: org.openqa.selenium.chrome.ChromeDriver
+Command: [f4446ec8913dae647d6755baa95f1bdf, findElement {using=id, value=login-usuario}]
+Capabilities {acceptInsecureCerts: false, browserName: chrome, browserVersion: 149.0.7827.201, chrome: {chromedriverVersion: 149.0.7827.155 (07b52360cc1..., userDataDir: C:\Users\jn147\AppData\Loca...}, fedcm:accounts: true, goog:chromeOptions: {debuggerAddress: localhost:57538}, goog:processID: 16044, networkConnectionEnabled: false, pageLoadStrategy: normal, platformName: windows, proxy: Proxy(), se:cdp: ws://localhost:57538/devtoo..., se:cdpVersion: 149.0.7827.201, setWindowRect: true, strictFileInteractability: false, timeouts: {implicit: 0, pageLoad: 300000, script: 30000}, unhandledPromptBehavior: dismiss and notify, webauthn:extension:credBlob: true, webauthn:extension:largeBlob: true, webauthn:extension:minPinLength: true, webauthn:extension:prf: true, webauthn:virtualAuthenticators: true}
+Session ID: f4446ec8913dae647d6755baa95f1bdf
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.createException(W3CHttpResponseCodec.java:200)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:133)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:52)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:191)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.invokeExecute(DriverCommandExecutor.java:200)
+	at org.openqa.selenium.remote.service.DriverCommandExecutor.execute(DriverCommandExecutor.java:175)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:523)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:66)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:360)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:354)
+	at net.thucydides.core.webdriver.WebDriverFacade.findElement(WebDriverFacade.java:259)
+	at net.serenitybdd.core.pages.WebElementResolverByLocator.resolveForDriver(WebElementResolverByLocator.java:25)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.getResolvedElement(WebElementFacadeImpl.java:188)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.getElement(WebElementFacadeImpl.java:183)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.lambda$type$2(WebElementFacadeImpl.java:745)
+	at net.serenitybdd.core.pages.WithRetries.perform(WithRetries.java:22)
+	at net.serenitybdd.core.pages.WebElementFacadeImpl.type(WebElementFacadeImpl.java:744)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget.lambda$performAs$0(EnterValueIntoTarget.java:19)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget.performAs(EnterValueIntoTarget.java:18)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget$ByteBuddy$bOqWo1OL.performAs$accessor$uHQZhr3j(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at net.thucydides.core.steps.StepInterceptor.invokeMethod(StepInterceptor.java:519)
+	at net.thucydides.core.steps.StepInterceptor.executeTestStepMethod(StepInterceptor.java:499)
+	at net.thucydides.core.steps.StepInterceptor.runTestStep(StepInterceptor.java:471)
+	at net.thucydides.core.steps.StepInterceptor.runOrSkipMethod(StepInterceptor.java:213)
+	at net.thucydides.core.steps.StepInterceptor.testStepResult(StepInterceptor.java:200)
+	at net.thucydides.core.steps.StepInterceptor.intercept(StepInterceptor.java:92)
+	at net.thucydides.core.steps.ProxyConfiguration$InterceptorDispatcher.intercept(ProxyConfiguration.java:51)
+	at net.serenitybdd.screenplay.actions.EnterValueIntoTarget$ByteBuddy$bOqWo1OL.performAs(Unknown Source)
+	at net.serenitybdd.screenplay.Actor.performTask(Actor.java:299)
+	at net.serenitybdd.screenplay.Actor.perform(Actor.java:274)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:215)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:222)
+	at co.com.tasks.DoLogin.performAs(DoLogin.java:28)
+	at co.com.tasks.DoLogin$ByteBuddy$EZiCi6IX.performAs$accessor$qseUhkhD(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at net.thucydides.core.steps.StepInterceptor.invokeMethod(StepInterceptor.java:519)
+	at net.thucydides.core.steps.StepInterceptor.executeTestStepMethod(StepInterceptor.java:499)
+	at net.thucydides.core.steps.StepInterceptor.runTestStep(StepInterceptor.java:471)
+	at net.thucydides.core.steps.StepInterceptor.runOrSkipMethod(StepInterceptor.java:213)
+	at net.thucydides.core.steps.StepInterceptor.testStepResult(StepInterceptor.java:200)
+	at net.thucydides.core.steps.StepInterceptor.intercept(StepInterceptor.java:92)
+	at net.thucydides.core.steps.ProxyConfiguration$InterceptorDispatcher.intercept(ProxyConfiguration.java:51)
+	at co.com.tasks.DoLogin$ByteBuddy$EZiCi6IX.performAs(Unknown Source)
+	at net.serenitybdd.screenplay.Actor.performTask(Actor.java:299)
+	at net.serenitybdd.screenplay.Actor.perform(Actor.java:274)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:215)
+	at net.serenitybdd.screenplay.Actor.attemptsTo(Actor.java:222)
+	at co.com.stepdefinitions.LoginStepDefinitions.elIngresaLasCredencialesDeAccesoCorrectas(LoginStepDefinitions.java:42)
+	at ✽.el ingresa las credenciales de acceso correctas(classpath:features/login.feature:6)
+
