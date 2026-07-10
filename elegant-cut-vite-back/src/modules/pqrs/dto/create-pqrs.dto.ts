@@ -108,7 +108,7 @@ export class CrearPqrsDto {
     description: 'Respuesta brindada por el administrador (ignorado al crear)',
     example: '',
   })
-  @IsOptional() //valida que el dato sea opcional
-  @IsString() //valida que el dato sea tipo texto
-  respuesta?: string;
+  @IsOptional()
+  @IsString()
+  respuesta_admin?: string;
 }
