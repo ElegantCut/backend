@@ -78,6 +78,11 @@ export class CrearUsuarioDto {
   @ApiPropertyOptional({
     default: 2,
   })
+
+  //decorador del rol que faltaba para que lo añada
+  @IsOptional()
+
+
   @IsNumber()
   id_rol?: number;
 

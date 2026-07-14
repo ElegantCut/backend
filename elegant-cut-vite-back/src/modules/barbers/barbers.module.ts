@@ -15,4 +15,4 @@ import { PrismaModule } from '../../prisma/prisma.module';
   providers: [BarbersService, BarbersRepository],
   exports: [BarbersService],
 })
-export class BarbersModule { }
+export class BarbersModule {}

@@ -6,31 +6,31 @@ import { buildCloudinaryUrl, parseCloudinaryPhotos } from '../../common/helpers/
 
 @Injectable()
 export class BarbersService {
-    constructor(private readonly barbersRepo: BarbersRepository) { }
+  constructor(private readonly barbersRepo: BarbersRepository) {}
 
-    async getAllBarbers() {
-        try {
-            const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
-            const mappedData = data.map(barber => this.mapBarberWithRating(barber));
-            return { success: true, data: mappedData };
-        } catch (error) {
-            return { success: false, data: [] };
-        }
+  async getAllBarbers() {
+    try {
+      const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
+      const mappedData = data.map((barber) => this.mapBarberWithRating(barber));
+      return { success: true, data: mappedData };
+    } catch (error) {
+      return { success: false, data: [] };
     }
+  }
 
-    async getPublicBarbers() {
-        const barbers = await this.barbersRepo.findActive();
-        return barbers.map(barber => this.mapBarberWithRating(barber));
-    }
+  async getPublicBarbers() {
+    const barbers = await this.barbersRepo.findActive();
+    return barbers.map((barber) => this.mapBarberWithRating(barber));
+  }
 
-    async getBarberStats(id: number) {
-        return this.barbersRepo.getStats(id);
-    }
+  async getBarberStats(id: number) {
+    return this.barbersRepo.getStats(id);
+  }
 
-    async obtenerBarberos() {
-        const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
-        return data.map(barber => this.mapBarberWithRating(barber));
-    }
+  async obtenerBarberos() {
+    const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
+    return data.map((barber) => this.mapBarberWithRating(barber));
+  }
 
     async crearBarbero(createBarberDto: CreateBarberDto) {
         // Encriptar la contraseña antes de guardarla

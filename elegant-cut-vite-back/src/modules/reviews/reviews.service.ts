@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ReviewsRepository } from './reviews.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -83,6 +83,10 @@ export class ReviewsService {
     const review = await this.prisma.resenas.findUnique({
       where: { id_resena: id },
     });
+
+    if (!review) {
+      throw new NotFoundException(`Reseña con ID ${id} no encontrada`);
+    }
 
     await this.prisma.resenas.delete({
       where: { id_resena: id },

@@ -16,16 +16,19 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiQuery, //este es el nuevo arreglo del swagger xd 
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+
+
 @ApiTags('Reviews - Reseñas')
 @Controller('reviews')
 export class ReviewsController {
-  constructor(private readonly reviewsService: ReviewsService) {}
+  constructor(private readonly reviewsService: ReviewsService) { }
 
   // este es el del ejemplo de prisma
 
@@ -55,8 +58,11 @@ export class ReviewsController {
     description:
       'Listado completo para el panel de administración, opcionalmente filtrado por estado (approved/spam)',
   })
+
+  //Acá cree el nuevo método la cague en el primero jaja 
+  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filtro opcional por estado (ej: approved o spam)' })
   @Get('admin/all')
-  async getAdminReviews(@Query('status') status: string) {
+  async getAdminReviews(@Query('status') status?: string) {
     return this.reviewsService.findAllAdmin(status);
   }
 

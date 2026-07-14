@@ -87,16 +87,56 @@ export class DashboardService {
       const spacing = 12;
 
       // Tarjeta 1: Citas Hoy
-      this.drawMetricCard(doc, 50, cardY, cardWidth, cardHeight, 'Citas Hoy', stats.citasHoy.toString(), primaryColor, lightBg);
+      this.drawMetricCard(
+        doc,
+        50,
+        cardY,
+        cardWidth,
+        cardHeight,
+        'Citas Hoy',
+        stats.citasHoy.toString(),
+        primaryColor,
+        lightBg,
+      );
 
       // Tarjeta 2: Ingresos Hoy
-      this.drawMetricCard(doc, 50 + cardWidth + spacing, cardY, cardWidth, cardHeight, 'Ingresos Hoy', `$${stats.ingresosHoy.toLocaleString('es-ES')}`, successColor, lightBg);
+      this.drawMetricCard(
+        doc,
+        50 + cardWidth + spacing,
+        cardY,
+        cardWidth,
+        cardHeight,
+        'Ingresos Hoy',
+        `$${stats.ingresosHoy.toLocaleString('es-ES')}`,
+        successColor,
+        lightBg,
+      );
 
       // Tarjeta 3: Clientes Nuevos
-      this.drawMetricCard(doc, 50 + (cardWidth + spacing) * 2, cardY, cardWidth, cardHeight, 'Clientes Nuevos', stats.clientesNuevos.toString(), dangerColor, lightBg);
+      this.drawMetricCard(
+        doc,
+        50 + (cardWidth + spacing) * 2,
+        cardY,
+        cardWidth,
+        cardHeight,
+        'Clientes Nuevos',
+        stats.clientesNuevos.toString(),
+        dangerColor,
+        lightBg,
+      );
 
       // Tarjeta 4: Citas Pendientes
-      this.drawMetricCard(doc, 50 + (cardWidth + spacing) * 3, cardY, cardWidth, cardHeight, 'Pendientes', stats.citasPendientes.toString(), warningColor, lightBg);
+      this.drawMetricCard(
+        doc,
+        50 + (cardWidth + spacing) * 3,
+        cardY,
+        cardWidth,
+        cardHeight,
+        'Pendientes',
+        stats.citasPendientes.toString(),
+        warningColor,
+        lightBg,
+      );
 
       // Sección 2: Resumen del Estado de Citas
       doc
@@ -120,33 +160,55 @@ export class DashboardService {
         .fillColor(successColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text(stats.citasCompletadas.toString(), 50 + 20, summaryY + 25, { width: colWidth - 40, align: 'center' })
+        .text(stats.citasCompletadas.toString(), 50 + 20, summaryY + 25, {
+          width: colWidth - 40,
+          align: 'center',
+        })
         .fillColor(textColor)
         .fontSize(11)
         .font('Helvetica')
-        .text('Completadas', 50 + 20, summaryY + 55, { width: colWidth - 40, align: 'center' });
+        .text('Completadas', 50 + 20, summaryY + 55, {
+          width: colWidth - 40,
+          align: 'center',
+        });
 
       // Columna 2: Pendientes
       doc
         .fillColor(warningColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text(stats.citasPendientes.toString(), 50 + colWidth + 20, summaryY + 25, { width: colWidth - 40, align: 'center' })
+        .text(
+          stats.citasPendientes.toString(),
+          50 + colWidth + 20,
+          summaryY + 25,
+          { width: colWidth - 40, align: 'center' },
+        )
         .fillColor(textColor)
         .fontSize(11)
         .font('Helvetica')
-        .text('Pendientes', 50 + colWidth + 20, summaryY + 55, { width: colWidth - 40, align: 'center' });
+        .text('Pendientes', 50 + colWidth + 20, summaryY + 55, {
+          width: colWidth - 40,
+          align: 'center',
+        });
 
       // Columna 3: Canceladas
       doc
         .fillColor(dangerColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text(stats.citasCanceladas.toString(), 50 + colWidth * 2 + 20, summaryY + 25, { width: colWidth - 40, align: 'center' })
+        .text(
+          stats.citasCanceladas.toString(),
+          50 + colWidth * 2 + 20,
+          summaryY + 25,
+          { width: colWidth - 40, align: 'center' },
+        )
         .fillColor(textColor)
         .fontSize(11)
         .font('Helvetica')
-        .text('Canceladas', 50 + colWidth * 2 + 20, summaryY + 55, { width: colWidth - 40, align: 'center' });
+        .text('Canceladas', 50 + colWidth * 2 + 20, summaryY + 55, {
+          width: colWidth - 40,
+          align: 'center',
+        });
 
       // Líneas divisorias de la tabla de resumen
       doc
@@ -170,7 +232,12 @@ export class DashboardService {
         .fillColor(secondaryColor)
         .fontSize(8)
         .font('Helvetica')
-        .text('Elegant Cut - Reporte del Administrador. Generado automáticamente.', 50, 735, { align: 'center' });
+        .text(
+          'Elegant Cut - Reporte del Administrador. Generado automáticamente.',
+          50,
+          735,
+          { align: 'center' },
+        );
 
       doc.end();
     });
@@ -185,11 +252,9 @@ export class DashboardService {
     title: string,
     value: string,
     color: string,
-    bgColor: string
+    bgColor: string,
   ) {
-    doc
-      .roundedRect(x, y, width, height, 8)
-      .fillAndStroke(bgColor, '#E5E5EA');
+    doc.roundedRect(x, y, width, height, 8).fillAndStroke(bgColor, '#E5E5EA');
 
     doc
       .fillColor('#8E8E93')
