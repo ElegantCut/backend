@@ -3,13 +3,15 @@ import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
+import { IUserLookup } from './interfaces/user-lookup.interface';
+
 
 @Injectable()
-export class UsersService {
+export class UsersService implements IUserLookup {
   constructor(
     private readonly usersRepo: UsersRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async findOneByUsername(username: string) {
     const user = await this.usersRepo.findByUsername(username);

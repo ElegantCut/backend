@@ -12,10 +12,9 @@ import { PqrsModule } from './modules/pqrs/pqrs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { EmailModule } from './modules/email/email.module';
-import { PortabarberoModule } from './portabarbero/portabarbero.module';
-import { ServiceUModule } from './modules/service_u/service_u.module';
+import { PortabarberoModule } from './modules/portabarbero/portabarbero.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -37,7 +36,6 @@ import { NotificationsModule } from './notifications/notifications.module';
     EmailModule,
     PortabarberoModule,
     UploadsModule,
-    ServiceUModule,
     NotificationsModule,
   ],
 })

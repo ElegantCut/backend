@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePortaDto } from './dto/porta.dto';
 
 @Injectable()
 export class PortabarberoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // creamos la lógica del metodo post (ahora soporta upsert para permitir actualización)
   async crearPortafolio(datos: CreatePortaDto) {

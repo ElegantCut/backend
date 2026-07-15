@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Inject
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../../modules/users/users.service';
@@ -13,15 +14,17 @@ import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
+import { USER_LOOKUP_SERVICE } from '../users/interfaces/user-lookup.interface';
+import type { IUserLookup } from '../users/interfaces/user-lookup.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
-    private emailService: EmailService,
-    private prisma: PrismaService,
-  ) {}
+    @Inject(USER_LOOKUP_SERVICE) private readonly usersService: IUserLookup,
+    private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
+    private readonly prisma: PrismaService,
+  ) { }
 
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -95,11 +98,6 @@ export class AuthService {
       },
     };
   }
-
-  async traerUsuarios() {
-    return await this.usersService.obtenerTodos();
-  }
-
   /**
    * Proceso para actualizar la contraseña utilizando el código de verificación
    * enviado previamente al correo del usuario.
