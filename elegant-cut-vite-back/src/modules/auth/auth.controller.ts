@@ -9,6 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   Res,
+  Redirect,
 } from '@nestjs/common';
 import type { Response } from 'express'; // Importamos Response para poder trabajar con las cookies
 import {
@@ -94,6 +95,32 @@ export class AuthController {
     });
     // Retornamos el resultado completo incluyendo el token al igual que el login normal
     return result;
+  }
+
+  @ApiOperation({ summary: 'Redirigir a Google para iniciar sesión' })
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Request() req) {
+    // Inicia el flujo de autenticación de Google
+  }
+
+  @ApiOperation({ summary: 'Callback de autenticación de Google' })
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @Redirect('http://localhost:5173/')
+  async googleAuthRedirect(
+    @Request() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.googleLoginServerSide(req.user);
+    res.cookie('jwt', result.token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    return { url: 'http://localhost:5173/' };
   }
 
   @ApiBearerAuth()
