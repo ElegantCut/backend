@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
 import { UsersRepository } from '../users/users.repository';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -96,14 +96,21 @@ export class AppointmentsService {
             id_estado_cita: Number(datos.id_estado_cita),
             id_horarios: Number(datos.id_horarios),
         };
-        
-        const reserva = await this.appointmentsRepo.createAppointmentWithTransaction(reservaData, id_servicio);
+
+        let reserva: any;
+        try {
+            reserva = await this.appointmentsRepo.createAppointmentWithTransaction(reservaData, id_servicio);
+        } catch (error: any) {
+            if (error.message === 'HORARIO_OCUPADO') {
+                throw new BadRequestException('Este horario ya no está disponible para el barbero seleccionado. Por favor, elige otra hora.');
+            }
+            throw error;
+        }
 
         // --- INTEGRACIÓN CON n8n ---
         try {
             const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita'; 
             
-            const reservaAny = reserva as any;
             const datosAny = datos as any;
 
             // Buscar el email del cliente en la BD como respaldo
@@ -115,7 +122,7 @@ export class AppointmentsService {
 
             const payload = {
                 evento: 'NUEVA_CITA',
-                id_reserva: reservaAny.id_reservas,
+                id_reserva: reserva.id_reservas,
                 cliente_id: datosAny.id_usuario,
                 email_cliente: emailFinal,
                 nombre_cliente: nombreFinal,

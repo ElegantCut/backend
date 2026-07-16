@@ -35,6 +35,7 @@ export class AppointmentsRepository {
             this.prisma.reservas.findMany({
                 where: {
                     fecha: { gte: targetDate, lt: nextDay },
+                    id_empleado: barberId,
                     id_estado_cita: { in: [1, 2] },
                 },
                 select: { horarios: { select: { hora_inicio: true } } },
@@ -118,6 +119,24 @@ export class AppointmentsRepository {
 
     async createAppointmentWithTransaction(reservaData: any, id_servicio: number) {
         return this.prisma.$transaction(async (tx) => {
+            // Validar que no exista otra reserva para el mismo barbero, fecha y horario
+            const fechaDate = new Date(reservaData.fecha);
+            const nextDay = new Date(fechaDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const conflict = await tx.reservas.findFirst({
+                where: {
+                    id_empleado: reservaData.id_empleado,
+                    fecha: { gte: fechaDate, lt: nextDay },
+                    id_horarios: reservaData.id_horarios,
+                    id_estado_cita: { in: [1, 2] }, // Pendiente o Completada
+                },
+            });
+
+            if (conflict) {
+                throw new Error('HORARIO_OCUPADO');
+            }
+
             const reservaResult = await tx.reservas.create({
                 data: reservaData,
             });
