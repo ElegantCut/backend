@@ -59,7 +59,10 @@ export class ServicesAdminController {
     description: 'Permite modificar precio, nombre, duración, etc.',
   })
   @ApiParam({ name: 'id', description: 'ID del servicio a editar', example: 1 })
-  @ApiResponse({ status: 200, description: 'Servicio actualizado exitosamente.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Servicio actualizado exitosamente.',
+  })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -72,7 +75,11 @@ export class ServicesAdminController {
     summary: 'Eliminar un servicio (Admin)',
     description: 'Borra definitivamente un servicio del catálogo.',
   })
-  @ApiParam({ name: 'id', description: 'ID del servicio a eliminar', example: 1 })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del servicio a eliminar',
+    example: 1,
+  })
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.servicesService.remove(id);

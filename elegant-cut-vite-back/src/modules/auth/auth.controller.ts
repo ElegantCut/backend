@@ -24,11 +24,15 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que creamos
+import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth - Autenticación')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
   //protegemos la ruta de login con el guard
   @ApiBearerAuth()
   @ApiOperation({
@@ -127,12 +131,14 @@ export class AuthController {
   @ApiOperation({
     summary: 'Obtener mi perfil',
     description:
-      'Devuelve los detalles básicos del usuario que está conectado (según el token).',
+      'Devuelve los detalles completos del usuario que está conectado.',
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   async getProfile(@Request() req) {
-    return { success: true, data: req.user };
+    const user = await this.usersService.findOne(req.user.id_usuario);
+    const { password_hash, ...userData } = user as any;
+    return { success: true, data: userData };
   }
 
   //creamos el nuevo método put

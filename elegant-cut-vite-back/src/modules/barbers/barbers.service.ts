@@ -2,34 +2,35 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
 import * as bcrypt from 'bcryptjs';
 import { CreateBarberDto } from './dto/create.barbers.dto';
+import { buildCloudinaryUrl, parseCloudinaryPhotos } from '../../common/helpers/cloudinary-url.helper';
 
 @Injectable()
 export class BarbersService {
-    constructor(private readonly barbersRepo: BarbersRepository) { }
+  constructor(private readonly barbersRepo: BarbersRepository) {}
 
-    async getAllBarbers() {
-        try {
-            const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
-            const mappedData = data.map(barber => this.mapBarberWithRating(barber));
-            return { success: true, data: mappedData };
-        } catch (error) {
-            return { success: false, data: [] };
-        }
+  async getAllBarbers() {
+    try {
+      const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
+      const mappedData = data.map((barber) => this.mapBarberWithRating(barber));
+      return { success: true, data: mappedData };
+    } catch (error) {
+      return { success: false, data: [] };
     }
+  }
 
-    async getPublicBarbers() {
-        const barbers = await this.barbersRepo.findActive();
-        return barbers.map(barber => this.mapBarberWithRating(barber));
-    }
+  async getPublicBarbers() {
+    const barbers = await this.barbersRepo.findActive();
+    return barbers.map((barber) => this.mapBarberWithRating(barber));
+  }
 
-    async getBarberStats(id: number) {
-        return this.barbersRepo.getStats(id);
-    }
+  async getBarberStats(id: number) {
+    return this.barbersRepo.getStats(id);
+  }
 
-    async obtenerBarberos() {
-        const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
-        return data.map(barber => this.mapBarberWithRating(barber));
-    }
+  async obtenerBarberos() {
+    const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
+    return data.map((barber) => this.mapBarberWithRating(barber));
+  }
 
     async crearBarbero(createBarberDto: CreateBarberDto) {
         // Encriptar la contraseña antes de guardarla
@@ -128,10 +129,16 @@ export class BarbersService {
         barber.calificacion_promedio = parseFloat(avg as string);
         barber.total_resenas = count;
 
+        // Mapear foto de perfil a URL completa de Cloudinary
+        barber.foto_perfil_url = buildCloudinaryUrl(barber.foto_perfil);
+
         const portfolio = Array.isArray(barber.portafolios) ? barber.portafolios[0] : barber.portafolios;
         if (portfolio) {
             portfolio.calificacion = parseFloat(avg as string);
             portfolio.rese_as_count = count;
+
+            // Parsear fotos del portafolio a URLs completas de Cloudinary
+            portfolio.fotos_portafolio_urls = parseCloudinaryPhotos(portfolio.fotos_portafolio);
         }
 
         return barber;
