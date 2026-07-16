@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -104,24 +104,55 @@ export class UsersService {
   }
 
   async crearUsuario(data: CrearUsuarioDto) {
+    // Check if email already exists
+    const existingUserByEmail = await this.prisma.usuarios.findFirst({
+      where: { email: data.email },
+    });
+    if (existingUserByEmail) {
+      throw new BadRequestException('Email ya registrado');
+    }
+
+    // Check if username already exists
+    const existingUserByUsername = await this.prisma.usuarios.findFirst({
+      where: { username: data.username },
+    });
+    if (existingUserByUsername) {
+      throw new BadRequestException('Nombre de usuario ya registrado');
+    }
+
     // Encriptar la contraseña antes de guardar el usuario (Centralizado, cubre Admin y Registro)
     const hashedPassword = await this.hashPassword(data.password_hash);
 
-    return await this.prisma.usuarios.create({
-      data: {
-        username: data.username,
-        prim_nombre: data.prim_nombre,
-        seg_nombre: data.seg_nombre,
-        apellido1: data.apellido1,
-        apellido2: data.apellido2,
-        email: data.email,
-        password_hash: hashedPassword,
-        telefono: data.telefono,
-        estado: data.estado !== undefined ? data.estado : true,
-        id_rol: data.id_rol !== undefined ? data.id_rol : 2,
-        foto_perfil: data.foto_perfil,
-      },
-    });
+    try {
+      return await this.prisma.usuarios.create({
+        data: {
+          username: data.username,
+          prim_nombre: data.prim_nombre,
+          seg_nombre: data.seg_nombre,
+          apellido1: data.apellido1,
+          apellido2: data.apellido2,
+          email: data.email,
+          password_hash: hashedPassword,
+          telefono: data.telefono,
+          estado: data.estado !== undefined ? data.estado : true,
+          id_rol: data.id_rol !== undefined ? data.id_rol : 2,
+          foto_perfil: data.foto_perfil,
+        },
+      });
+    } catch (error: any) {
+      // Prisma P2002 = unique constraint violation
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'campo';
+        if (field === 'email') {
+          throw new BadRequestException('Email ya existente');
+        }
+        if (field === 'username') {
+          throw new BadRequestException('Nombre de usuario ya existente');
+        }
+        throw new BadRequestException(`El ${field} ya está en uso`);
+      }
+      throw error;
+    }
   }
 
   // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
@@ -145,10 +176,24 @@ export class UsersService {
       data.password_hash = await this.hashPassword(data.password_hash);
     }
 
-    return await this.prisma.usuarios.update({
-      where: { id_usuario: id },
-      data,
-    });
+    try {
+      return await this.prisma.usuarios.update({
+        where: { id_usuario: id },
+        data,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'campo';
+        if (field === 'email') {
+          throw new BadRequestException('Email ya existente');
+        }
+        if (field === 'username') {
+          throw new BadRequestException('Nombre de usuario ya existente');
+        }
+        throw new BadRequestException(`El ${field} ya está en uso`);
+      }
+      throw error;
+    }
   }
 
   async remove(id: number) {

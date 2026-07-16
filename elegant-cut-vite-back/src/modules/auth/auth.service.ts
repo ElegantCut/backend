@@ -153,9 +153,7 @@ export class AuthService {
     const usuario = await this.prisma.usuarios.findFirst({ where: { email } });
 
     if (!usuario) {
-      return {
-        message: 'Si el correo existe en nuestro sistema, recibirás un código.',
-      };
+      throw new BadRequestException('Email no registrado');
     }
 
     const codigoSecreto = Math.floor(
