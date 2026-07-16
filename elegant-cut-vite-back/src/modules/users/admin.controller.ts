@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
+import { UpdateUsuarioDto } from './dto/update-users.dto';
 
 @ApiTags('Admin - Administradores')
 @Controller('admin')
@@ -39,7 +40,7 @@ export class AdminController {
 
   @ApiOperation({ summary: 'Actualizar administrador' })
   @Patch('administrators/:id')
-  async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
+  async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateUsuarioDto) {
     return this.usersService.update(id, data);
   }
 

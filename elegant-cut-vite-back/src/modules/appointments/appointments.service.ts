@@ -90,7 +90,7 @@ export class AppointmentsService {
         const id_servicio = Number(datos.id_servicio);
         const reservaData = {
             fecha: new Date(datos.fecha),
-            observaciones: datos.observaciones,
+            observaciones: datos.observaciones ? datos.observaciones.substring(0, 70) : undefined,
             id_usuario: Number(datos.id_usuario),
             id_empleado: Number(datos.id_empleado),
             id_estado_cita: Number(datos.id_estado_cita),
