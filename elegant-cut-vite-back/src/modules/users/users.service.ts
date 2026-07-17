@@ -175,5 +175,6 @@ export class UsersService implements IUserIntegration {
 
     // Borrado suave  Cambiamos su estado a false (inactivo) uwu
     return await this.usersRepo.updateStatus(id, false);
+    
   }
 }

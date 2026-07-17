@@ -21,5 +21,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": ["ELEGANT_CUT_FLOW_BACKEND/mi-api-jest/src/**/*.ts"]
 }
