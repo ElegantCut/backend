@@ -24,15 +24,13 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que creamos
-import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth - Autenticación')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  ) { }
   //protegemos la ruta de login con el guard
   @ApiBearerAuth()
   @ApiOperation({
@@ -100,47 +98,6 @@ export class AuthController {
     // Retornamos el resultado completo incluyendo el token al igual que el login normal
     return result;
   }
-
-  @ApiOperation({ summary: 'Redirigir a Google para iniciar sesión' })
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Request() req) {
-    // Inicia el flujo de autenticación de Google
-  }
-
-  @ApiOperation({ summary: 'Callback de autenticación de Google' })
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @Redirect('http://localhost:5173/')
-  async googleAuthRedirect(
-    @Request() req,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.googleLoginServerSide(req.user);
-    res.cookie('jwt', result.token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-    return { url: 'http://localhost:5173/' };
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Obtener mi perfil',
-    description:
-      'Devuelve los detalles completos del usuario que está conectado.',
-  })
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  async getProfile(@Request() req) {
-    const user = await this.usersService.findOne(req.user.id_usuario);
-    const { password_hash, ...userData } = user as any;
-    return { success: true, data: userData };
-  }
-
   //creamos el nuevo método put
 
   @ApiOperation({ summary: 'Restablecer Contraseña' })

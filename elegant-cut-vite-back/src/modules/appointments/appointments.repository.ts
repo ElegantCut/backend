@@ -137,12 +137,6 @@ export class AppointmentsRepository {
     });
   }
 
-  async findUserByUserId(userId: number) {
-    return this.prisma.usuarios.findUnique({
-      where: { id_usuario: userId },
-      select: { email: true, prim_nombre: true, apellido1: true },
-    });
-  }
 
   async findAllHorarios() {
     return this.prisma.horarios.findMany({

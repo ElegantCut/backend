@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
-import { UsersRepository } from '../users/users.repository';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
+import type { IUserIntegration } from '../users/interfaces/user-integration.interface';
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     private readonly appointmentsRepo: AppointmentsRepository,
-    private readonly usersRepo: UsersRepository,
+    @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
   ) {}
 
   async getAvailability(date: string, barberId: number) {
@@ -120,7 +121,7 @@ export class AppointmentsService {
       const datosAny = datos as any;
 
       // Buscar el email del cliente en la BD como respaldo
-      const cliente = await this.appointmentsRepo.findUserByUserId(
+      const cliente = await this.usersService.getUserBasicInfo(
         Number(datosAny.id_usuario),
       );
 

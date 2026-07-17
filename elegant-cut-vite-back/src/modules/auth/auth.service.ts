@@ -2,26 +2,28 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Inject
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../../modules/users/users.service';
 import { EmailService } from '../../modules/email/email.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
+import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
+import type { IUserIntegration } from '../users/interfaces/user-integration.interface';
+import { AuthRepository } from './auth.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
-    private emailService: EmailService,
-    private prisma: PrismaService,
-  ) {}
+    @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
+    private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
+    private readonly authRepo: AuthRepository,
+  ) { }
 
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -95,11 +97,7 @@ export class AuthService {
       },
     };
   }
-
-  async traerUsuarios() {
-    return await this.usersService.obtenerTodos();
-  }
-
+  
   /**
    * Proceso para actualizar la contraseña utilizando el código de verificación
    * enviado previamente al correo del usuario.
@@ -108,15 +106,11 @@ export class AuthService {
     const { email, codigo, newPassword } = resetPasswordDto;
 
     // 1. Validar el código en la tabla codigos_verificacion
-    const verificacion = await this.prisma.codigos_verificacion.findFirst({
-      where: {
-        email: email,
-        codigo: codigo,
-        tipo: codigos_verificacion_tipo.recuperacion,
-        usado: false,
-        expira_en: { gte: new Date() }, // Verifica que no haya expirado
-      },
-    });
+    const verificacion = await this.authRepo.findValidVerificationCode(
+      email,
+      codigo,
+      codigos_verificacion_tipo.recuperacion
+    );
 
     if (!verificacion) {
       throw new BadRequestException('El código es inválido o ha expirado');
@@ -126,31 +120,30 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // 3. Transacción: Actualizar usuarios y marcar código como usado
-    return await this.prisma.$transaction(async (tx) => {
-      const usuarios = await tx.usuarios.findMany({ where: { email } });
-      if (usuarios.length === 0)
+    // 3. Actualizar usuario usando interface
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
         throw new BadRequestException('No existe un usuario con ese correo');
+    }
 
-      await tx.usuarios.updateMany({
-        where: { email },
-        data: { password_hash: hashedPassword },
-      });
+    await this.usersService.updatePasswordByEmail(email, hashedPassword);
 
-      await tx.codigos_verificacion.update({
-        where: { id: verificacion.id },
-        data: { usado: true },
-      });
+    // 4. Marcar código como usado
+    await this.authRepo.markCodeAsUsed(verificacion.id);
 
-      return {
-        success: true,
-        message: 'Contraseña actualizada correctamente',
-      };
-    });
+    return {
+      success: true,
+      message: 'Contraseña actualizada correctamente',
+    };
   }
 
   async solicitarRecuperacion(email: string) {
-    const usuario = await this.prisma.usuarios.findFirst({ where: { email } });
+    let usuario;
+    try {
+        usuario = await this.usersService.findByEmail(email);
+    } catch (e) {
+        // Ignoramos si no se encuentra ( NotFoundException )
+    }
 
     if (!usuario) {
       throw new BadRequestException('Email no registrado');
@@ -164,14 +157,12 @@ export class AuthService {
     fechaExpiracion.setMinutes(fechaExpiracion.getMinutes() + 15);
 
     // 4. Guardar en la tabla codigos_verificacion
-    await this.prisma.codigos_verificacion.create({
-      data: {
+    await this.authRepo.createVerificationCode({
         email: email,
         codigo: codigoSecreto,
         tipo: codigos_verificacion_tipo.recuperacion,
         expira_en: fechaExpiracion,
         usado: false,
-      },
     });
 
     await this.emailService.sendVerificationCode(email, codigoSecreto);
@@ -197,17 +188,11 @@ export class AuthService {
       } = payload;
 
       // Buscar usuario por email o google_id
-      let user = await this.prisma.usuarios.findFirst({
-        where: {
-          OR: [{ email: email }, { google_id: google_id }],
-        },
-        include: { rol: true },
-      });
+      let user = await this.usersService.findByEmailOrGoogleId(email!, google_id);
 
       if (!user) {
         // POBALR TABLA: Si no existe, lo creamos
-        user = await this.prisma.usuarios.create({
-          data: {
+        user = await this.usersService.crearUsuarioConGoogle({
             email: email!,
             google_id: google_id,
             prim_nombre: given_name || 'Usuario',
@@ -218,16 +203,10 @@ export class AuthService {
             username:
               (email || 'user').split('@')[0] +
               Math.floor(Math.random() * 1000),
-          },
-          include: { rol: true },
         });
       } else if (!user.google_id) {
         // Si existía por email pero no tenía google_id, lo vinculamos
-        user = await this.prisma.usuarios.update({
-          where: { id_usuario: user.id_usuario },
-          data: { google_id: google_id },
-          include: { rol: true },
-        });
+        user = await this.usersService.vincularGoogleId(user.id_usuario, google_id);
       }
 
       // Generar payload para nuestro JWT
