@@ -74,7 +74,7 @@ export class UsersService implements IUserIntegration {
       return { success: false };
     }
   }
-  
+
   //nuevo metodo para traer la info básica
   async getUserBasicInfo(id: number) {
     const user = await this.usersRepo.getUserBasicInfo(id);
@@ -116,17 +116,13 @@ export class UsersService implements IUserIntegration {
 
   async crearUsuario(data: CrearUsuarioDto) {
     // Check if email already exists
-    const existingUserByEmail = await this.prisma.usuarios.findFirst({
-      where: { email: data.email },
-    });
+    const existingUserByEmail = await this.usersRepo.findByEmail(data.email);
     if (existingUserByEmail) {
       throw new BadRequestException('Email ya registrado');
     }
 
     // Check if username already exists
-    const existingUserByUsername = await this.prisma.usuarios.findFirst({
-      where: { username: data.username },
-    });
+    const existingUserByUsername = await this.usersRepo.findByUsername(data.username);
     if (existingUserByUsername) {
       throw new BadRequestException('Nombre de usuario ya registrado');
     }
@@ -135,17 +131,17 @@ export class UsersService implements IUserIntegration {
     const hashedPassword = await this.hashPassword(data.password_hash);
 
     return await this.usersRepo.createFullUser({
-        username: data.username,
-        prim_nombre: data.prim_nombre,
-        seg_nombre: data.seg_nombre,
-        apellido1: data.apellido1,
-        apellido2: data.apellido2,
-        email: data.email,
-        password_hash: hashedPassword,
-        telefono: data.telefono,
-        estado: data.estado !== undefined ? data.estado : true,
-        id_rol: data.id_rol !== undefined ? data.id_rol : 2,
-        foto_perfil: data.foto_perfil,
+      username: data.username,
+      prim_nombre: data.prim_nombre,
+      seg_nombre: data.seg_nombre,
+      apellido1: data.apellido1,
+      apellido2: data.apellido2,
+      email: data.email,
+      password_hash: hashedPassword,
+      telefono: data.telefono,
+      estado: data.estado !== undefined ? data.estado : true,
+      id_rol: data.id_rol !== undefined ? data.id_rol : 2,
+      foto_perfil: data.foto_perfil,
     });
   }
 
@@ -177,7 +173,7 @@ export class UsersService implements IUserIntegration {
   async remove(id: number) {
     await this.findOne(id); // Verifica si existe
 
-    // Borrado suave (soft-delete): Cambiamos su estado a false (inactivo)
+    // Borrado suave  Cambiamos su estado a false (inactivo) uwu
     return await this.usersRepo.updateStatus(id, false);
   }
 }

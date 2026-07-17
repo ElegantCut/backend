@@ -254,14 +254,10 @@ export class AuthService {
       const { email, firstName, lastName, picture } = reqUser;
 
       // Buscar usuario por email
-      let user = await this.prisma.usuarios.findFirst({
-        where: { email: email },
-        include: { rol: true },
-      });
+      let user = await this.usersService.findByEmailOrGoogleId(email, '');
 
       if (!user) {
-        user = await this.prisma.usuarios.create({
-          data: {
+        user = await this.usersService.crearUsuarioConGoogle({
             email: email,
             prim_nombre: firstName || 'Usuario',
             apellido1: lastName || 'Google',
@@ -269,8 +265,6 @@ export class AuthService {
             estado: true,
             foto_perfil: picture,
             username: (email || 'user').split('@')[0] + Math.floor(Math.random() * 1000),
-          },
-          include: { rol: true },
         });
       }
 

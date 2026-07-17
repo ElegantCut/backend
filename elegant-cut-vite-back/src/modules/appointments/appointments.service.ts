@@ -23,6 +23,10 @@ export class AppointmentsService {
     return this.appointmentsRepo.findAll();
   }
 
+  async getHorarios() {
+    return this.appointmentsRepo.findAllHorarios();
+  }
+
   // Nuevo método formateado específicamente para el listado del panel de Administrador
   async findAllAdmin() {
     try {
@@ -161,24 +165,23 @@ export class AppointmentsService {
     } catch (error) {
       console.warn('No se pudo enviar a n8n:', error);
     }
+    return reserva;
+  }
 
-    async createAppointment(datos: CreateAppointmentDto) {
-        const id_servicio = Number(datos.id_servicio);
-        const reservaData = {
-            fecha: new Date(datos.fecha),
-            observaciones: datos.observaciones ? datos.observaciones.substring(0, 70) : undefined,
-            id_usuario: Number(datos.id_usuario),
-            id_empleado: Number(datos.id_empleado),
-            id_estado_cita: Number(datos.id_estado_cita),
-            id_horarios: Number(datos.id_horarios),
-        };
-      });
-
+  async getAppointmentsByUser(userId: number) {
+    try {
+      const data = await this.appointmentsRepo.findAppointmentsByUser(userId);
       return { success: true, data };
     } catch (error) {
       console.error('Error fetching user appointments:', error);
       return { success: false, data: [] };
     }
+  }
+
+  async findOne(id: number) {
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    return cita;
   }
 
   async update(id: number, data: any) {
