@@ -1,12 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ReviewsRepository } from './reviews.repository';
-import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ReviewsService {
   constructor(
     private readonly reviewsRepo: ReviewsRepository,
-    private readonly prisma: PrismaService,
   ) {}
 
   async findApproved() {
@@ -18,95 +16,32 @@ export class ReviewsService {
     return review;
   }
 
-  //Este es de prisma RECORDAR
-
   async obtenerResenas() {
-    return this.prisma.resenas.findMany({
-      where: { estado: 1 },
-      orderBy: { fecha_resena: 'desc' },
-      include: {
-        barbero: {
-          select: {
-            id_usuario: true,
-            prim_nombre: true,
-            apellido1: true,
-          },
-        },
-        usuarios_resenas_id_clienteTousuarios: {
-          select: {
-            prim_nombre: true,
-            apellido1: true,
-          },
-        },
-      },
-    });
+    return this.reviewsRepo.obtenerResenas();
   }
 
   async findAllAdmin(status?: string) {
-    const where: any = {};
-    if (status === 'approved') where.estado = 1;
-    if (status === 'spam') where.estado = 0;
-
-    return this.prisma.resenas.findMany({
-      where,
-      orderBy: { fecha_resena: 'desc' },
-      include: {
-        barbero: {
-          select: {
-            id_usuario: true,
-            prim_nombre: true,
-            apellido1: true,
-          },
-        },
-        usuarios_resenas_id_clienteTousuarios: {
-          select: {
-            username: true,
-            prim_nombre: true,
-            apellido1: true,
-            email: true,
-          },
-        },
-      },
-    });
+    return this.reviewsRepo.findAllAdmin(status);
   }
 
   async changeStatusAdmin(id: number, nuevoEstado: number) {
-    const review = await this.prisma.resenas.update({
-      where: { id_resena: id },
-      data: { estado: nuevoEstado },
-    });
-
+    await this.reviewsRepo.changeStatusAdmin(id, nuevoEstado);
     return { success: true };
   }
 
   async deleteAdmin(id: number) {
-    const review = await this.prisma.resenas.findUnique({
-      where: { id_resena: id },
-    });
+    const review = await this.reviewsRepo.findById(id);
 
-    await this.prisma.resenas.delete({
-      where: { id_resena: id },
-    });
+    if (!review) {
+      throw new NotFoundException(`Reseña con ID ${id} no encontrada`);
+    }
+
+    await this.reviewsRepo.deleteAdmin(id);
 
     return { success: true };
   }
 
   async findBarberReviews(idBarbero: number) {
-    return this.prisma.resenas.findMany({
-      where: {
-        id_barbero:
-          idBarbero && !isNaN(Number(idBarbero)) ? Number(idBarbero) : null,
-        estado: 1,
-      },
-      include: {
-        usuarios_resenas_id_clienteTousuarios: {
-          select: {
-            prim_nombre: true,
-          },
-        },
-      },
-      orderBy: { fecha_resena: 'desc' },
-      take: 10, // Mostrar solo los últimos 10
-    });
+    return this.reviewsRepo.findBarberReviews(idBarbero);
   }
 }

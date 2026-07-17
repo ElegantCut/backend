@@ -28,7 +28,9 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que 
 @ApiTags('Auth - Autenticación')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+  ) { }
   //protegemos la ruta de login con el guard
   @ApiBearerAuth()
   @ApiOperation({
@@ -96,45 +98,6 @@ export class AuthController {
     // Retornamos el resultado completo incluyendo el token al igual que el login normal
     return result;
   }
-
-  @ApiOperation({ summary: 'Redirigir a Google para iniciar sesión' })
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Request() req) {
-    // Inicia el flujo de autenticación de Google
-  }
-
-  @ApiOperation({ summary: 'Callback de autenticación de Google' })
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @Redirect('http://localhost:5173/')
-  async googleAuthRedirect(
-    @Request() req,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.googleLoginServerSide(req.user);
-    res.cookie('jwt', result.token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-    return { url: 'http://localhost:5173/' };
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Obtener mi perfil',
-    description:
-      'Devuelve los detalles básicos del usuario que está conectado (según el token).',
-  })
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  async getProfile(@Request() req) {
-    return { success: true, data: req.user };
-  }
-
   //creamos el nuevo método put
 
   @ApiOperation({ summary: 'Restablecer Contraseña' })

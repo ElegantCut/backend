@@ -76,10 +76,13 @@ export class CrearUsuarioDto {
   estado?: boolean;
 
   @ApiPropertyOptional({
-    description: 'ID del rol asignado. 1=Admin, 2=Cliente, 3=Barbero',
-    example: 2,
+    default: 2,
   })
+
+  //decorador del rol que faltaba para que lo añada
   @IsOptional()
+
+
   @IsNumber()
   id_rol?: number;
 

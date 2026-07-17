@@ -5,13 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class PqrsRepository {
   constructor(private prisma: PrismaService) {}
 
-  // Hay que crearla primero y luego correr:
-  //   npx prisma db pull
-  //   npx prisma generate
-  // Mientras tanto estos métodos están preparados pero lanzarán error en runtime.
-
   async create(data: any) {
-    // Adaptado al nuevo esquema de la base de datos
     const { tipo_solicitud, asunto, descripcion, id_usuario, estado } = data;
     const result = await this.prisma.pqrs.create({
       data: {
@@ -26,7 +20,6 @@ export class PqrsRepository {
   }
 
   async findByUserData(email: string) {
-    // En el nuevo esquema, se busca a través de la relación con la tabla 'usuarios'
     return this.prisma.pqrs.findMany({
       where: {
         usuarios: {
@@ -34,7 +27,51 @@ export class PqrsRepository {
         },
       },
       include: {
-        usuarios: true, // Puede ser útil traer la info del usuario
+        usuarios: true, 
+      },
+    });
+  }
+
+  async obtenerPqrs() {
+    return this.prisma.pqrs.findMany({
+      include: {
+        usuarios: {
+          select: { prim_nombre: true, email: true, telefono: true },
+        },
+      },
+    });
+  }
+
+  async findOne(id: number) {
+    return this.prisma.pqrs.findUnique({
+      where: { id_pqrs: id },
+      include: {
+        usuarios: {
+          select: {
+            prim_nombre: true,
+            apellido1: true,
+            email: true,
+            telefono: true,
+          },
+        },
+      },
+    });
+  }
+
+  async update(id: number, data: any) {
+    return this.prisma.pqrs.update({
+      where: { id_pqrs: id },
+      data,
+    });
+  }
+
+  async findByRadicado(id: number) {
+    return this.prisma.pqrs.findUnique({
+      where: { id_pqrs: id },
+      select: {
+        estado: true,
+        fecha_creacion: true,
+        respuesta_admin: true,
       },
     });
   }

@@ -3,14 +3,19 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class DashboardRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getSummaryStats() {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Forzar que el cálculo de fecha sea con respecto a la zona horaria de Colombia (UTC-5)
+      const now = new Date();
+      const cotNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+
+      const cotStart = new Date(cotNow);
+      cotStart.setUTCHours(0, 0, 0, 0);
+
+      const today = new Date(cotStart.getTime() + 5 * 60 * 60 * 1000);
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
       const [
         citasHoyCount,
@@ -18,7 +23,7 @@ export class DashboardRepository {
         citasCompletadasCount,
         citasCanceladasCount,
         clientesNuevosCount,
-        citasCompletadasHoy,
+        reservasCompletadasHoy,
       ] = await Promise.all([
         this.prisma.reservas.count({
           where: { fecha: { gte: today, lt: tomorrow } },
@@ -44,12 +49,12 @@ export class DashboardRepository {
         }),
       ]);
 
-      // Calcular ingresos de hoy (suma de precios de servicios de citas completadas hoy)
-      const ingresosHoy = citasCompletadasHoy.reduce((total, reserva) => {
-        const precioServicios = reserva.detalle_cita_servicio.reduce((subTotal, detalle) => {
-          return subTotal + (detalle.servicios ? Number(detalle.servicios.precio) : 0);
+      // Calcular ingresos de hoy (suma de los precios de servicios en citas completadas hoy)
+      const ingresosHoy = (reservasCompletadasHoy || []).reduce((total, reserva) => {
+        const precioReserva = (reserva.detalle_cita_servicio || []).reduce((subtotal, detalle) => {
+          return subtotal + (detalle.servicios ? Number(detalle.servicios.precio) : 0);
         }, 0);
-        return total + precioServicios;
+        return total + precioReserva;
       }, 0);
 
       return {

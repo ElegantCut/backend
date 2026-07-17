@@ -95,6 +95,37 @@ export class UsersController {
     return await this.usersService.updatePhoto(id, publicId);
   }
 
+  // --- MÉTODO PARA QUE EL USUARIO ACTUALICE SU PROPIO PERFIL ---
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Actualizar mi perfil (Cliente)',
+    description:
+      'Permite al usuario autenticado actualizar sus propios datos (nombre, apellido, email, teléfono).',
+  })
+  @Patch('profile')
+  async updateProfile(
+    @Request() req,
+    @Body() updateUsuarioDto: UpdateUsuarioDto,
+  ) {
+    return this.usersService.update(req.user.id_usuario, updateUsuarioDto);
+  }
+
+  // --- ENDPOINT PARA QUE EL USUARIO VEA SU PROPIO PERFIL ---
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Obtener mi perfil',
+    description:
+      'Devuelve los datos del usuario autenticado (no requiere rol de Admin).',
+  })
+  @Get('me')
+  async getMyProfile(@Request() req) {
+    return this.usersService.findOne(req.user.id_usuario);
+  }
+
   // --- MÉTODOS CRUD ADMINISTRATIVOS ---
 
   @ApiBearerAuth()
