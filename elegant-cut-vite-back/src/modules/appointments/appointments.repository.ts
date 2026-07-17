@@ -23,12 +23,15 @@ export class AppointmentsRepository {
         });
     }
 
-    async getAvailableSlots(date: string, barberId: number) {
+    async getAvailableSlots(date: string, barberId: number, newServiceDuration?: number) {
         const targetDate = new Date(date);
         const nextDay = new Date(targetDate);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        const [allSlots, occupied] = await Promise.all([
+        // Duración por defecto del nuevo servicio: 30 minutos
+        const newDuration = newServiceDuration || 30;
+
+        const [allSlots, existingAppointments] = await Promise.all([
             this.prisma.horarios.findMany({
                 orderBy: { hora_inicio: 'asc' },
             }),
@@ -38,19 +41,44 @@ export class AppointmentsRepository {
                     id_empleado: barberId,
                     id_estado_cita: { in: [1, 2] },
                 },
-                select: { horarios: { select: { hora_inicio: true } } },
+                select: {
+                    horarios: { select: { hora_inicio: true } },
+                    detalle_cita_servicio: {
+                        select: { servicios: { select: { duracion: true } } },
+                    },
+                },
             }),
         ]);
 
-        const occupiedTimes = new Set(
-            occupied.map((r) => r.horarios?.hora_inicio),
-        );
+        // Helper: convertir hora numérica (ej. 1700) a minutos desde medianoche (ej. 1020)
+        const toMinutes = (h: number): number => {
+            const str = h.toString().padStart(4, '0');
+            return parseInt(str.slice(0, 2)) * 60 + parseInt(str.slice(2, 4));
+        };
 
-        return allSlots.map((slot) => ({
-            id: slot.id_horarios,
-            time: slot.hora_inicio.toString().padStart(4, '0').replace(/(\d{2})(\d{2})/, '$1:$2'),
-            isAvailable: !occupiedTimes.has(slot.hora_inicio),
-        }));
+        // Construir rangos ocupados: [startMinutes, endMinutes] para cada cita existente
+        const occupiedRanges: { start: number; end: number }[] = existingAppointments.map((r) => {
+            const startMin = toMinutes(r.horarios?.hora_inicio || 0);
+            const svcDuration = r.detalle_cita_servicio?.[0]?.servicios?.duracion || 30;
+            return { start: startMin, end: startMin + svcDuration };
+        });
+
+        // Para cada slot, verificar si agendar el nuevo servicio ahí se solapa con alguna cita existente
+        return allSlots.map((slot) => {
+            const candidateStart = toMinutes(slot.hora_inicio);
+            const candidateEnd = candidateStart + newDuration;
+
+            // Hay solapamiento si: candidateStart < existingEnd AND candidateEnd > existingStart
+            const hasOverlap = occupiedRanges.some(
+                (range) => candidateStart < range.end && candidateEnd > range.start,
+            );
+
+            return {
+                id: slot.id_horarios,
+                time: slot.hora_inicio.toString().padStart(4, '0').replace(/(\d{2})(\d{2})/, '$1:$2'),
+                isAvailable: !hasOverlap,
+            };
+        });
     }
 
     async create(appointmentData: any) {
@@ -119,21 +147,55 @@ export class AppointmentsRepository {
 
     async createAppointmentWithTransaction(reservaData: any, id_servicio: number) {
         return this.prisma.$transaction(async (tx) => {
-            // Validar que no exista otra reserva para el mismo barbero, fecha y horario
+            // Helper: convertir hora numérica (ej. 1700) a minutos desde medianoche
+            const toMinutes = (h: number): number => {
+                const str = h.toString().padStart(4, '0');
+                return parseInt(str.slice(0, 2)) * 60 + parseInt(str.slice(2, 4));
+            };
+
             const fechaDate = new Date(reservaData.fecha);
             const nextDay = new Date(fechaDate);
             nextDay.setDate(nextDay.getDate() + 1);
 
-            const conflict = await tx.reservas.findFirst({
+            // Obtener la duración del nuevo servicio
+            const newService = await tx.servicios.findUnique({
+                where: { id_servicio },
+                select: { duracion: true },
+            });
+            const newDuration = newService?.duracion || 30;
+
+            // Obtener el horario del nuevo slot
+            const newSlot = await tx.horarios.findUnique({
+                where: { id_horarios: reservaData.id_horarios },
+                select: { hora_inicio: true },
+            });
+            const newStart = toMinutes(newSlot?.hora_inicio || 0);
+            const newEnd = newStart + newDuration;
+
+            // Obtener todas las citas existentes del barbero en ese día
+            const existingAppointments = await tx.reservas.findMany({
                 where: {
                     id_empleado: reservaData.id_empleado,
                     fecha: { gte: fechaDate, lt: nextDay },
-                    id_horarios: reservaData.id_horarios,
-                    id_estado_cita: { in: [1, 2] }, // Pendiente o Completada
+                    id_estado_cita: { in: [1, 2] },
+                },
+                select: {
+                    horarios: { select: { hora_inicio: true } },
+                    detalle_cita_servicio: {
+                        select: { servicios: { select: { duracion: true } } },
+                    },
                 },
             });
 
-            if (conflict) {
+            // Verificar si hay solapamiento con alguna cita existente
+            const hasOverlap = existingAppointments.some((r) => {
+                const existingStart = toMinutes(r.horarios?.hora_inicio || 0);
+                const existingDuration = r.detalle_cita_servicio?.[0]?.servicios?.duracion || 30;
+                const existingEnd = existingStart + existingDuration;
+                return newStart < existingEnd && newEnd > existingStart;
+            });
+
+            if (hasOverlap) {
                 throw new Error('HORARIO_OCUPADO');
             }
 

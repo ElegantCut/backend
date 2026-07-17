@@ -18,7 +18,7 @@ export class DashboardRepository {
         citasCompletadasCount,
         citasCanceladasCount,
         clientesNuevosCount,
-        pagosHoy,
+        citasCompletadasHoy,
       ] = await Promise.all([
         this.prisma.reservas.count({
           where: { fecha: { gte: today, lt: tomorrow } },
@@ -29,16 +29,28 @@ export class DashboardRepository {
         this.prisma.usuarios.count({
           where: { id_rol: 2, created_at: { gte: today, lt: tomorrow } },
         }),
-        this.prisma.pagos.findMany({
-          where: { fecha: { gte: today, lt: tomorrow } },
+        this.prisma.reservas.findMany({
+          where: {
+            id_estado_cita: 2, // Completada
+            fecha: { gte: today, lt: tomorrow },
+          },
+          include: {
+            detalle_cita_servicio: {
+              include: {
+                servicios: true,
+              },
+            },
+          },
         }),
       ]);
 
-      // Calcular ingresos de hoy (suma de valores en pagosHoy)
-      const ingresosHoy = pagosHoy.reduce(
-        (acc, pago) => acc + Number(pago.valor),
-        0,
-      );
+      // Calcular ingresos de hoy (suma de precios de servicios de citas completadas hoy)
+      const ingresosHoy = citasCompletadasHoy.reduce((total, reserva) => {
+        const precioServicios = reserva.detalle_cita_servicio.reduce((subTotal, detalle) => {
+          return subTotal + (detalle.servicios ? Number(detalle.servicios.precio) : 0);
+        }, 0);
+        return total + precioServicios;
+      }, 0);
 
       return {
         success: true,

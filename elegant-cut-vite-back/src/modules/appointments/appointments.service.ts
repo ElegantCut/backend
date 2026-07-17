@@ -10,8 +10,8 @@ export class AppointmentsService {
         private readonly usersRepo: UsersRepository,
     ) { }
 
-    async getAvailability(date: string, barberId: number) {
-        return this.appointmentsRepo.getAvailableSlots(date, barberId);
+    async getAvailability(date: string, barberId: number, serviceDuration?: number) {
+        return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
     }
 
     async bookAppointment(data: any) {
