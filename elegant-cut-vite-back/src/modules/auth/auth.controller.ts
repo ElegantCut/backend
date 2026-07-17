@@ -23,7 +23,6 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que creamos
-import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth - Autenticación')
 @Controller('auth')

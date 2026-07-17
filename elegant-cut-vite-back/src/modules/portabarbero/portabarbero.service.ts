@@ -1,44 +1,31 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreatePortaDto } from './dto/porta.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PortabarberoRepository } from './portabarbero.repository';
 
 @Injectable()
 export class PortabarberoService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private portafoliosRepo: PortabarberoRepository) {}
 
-  // creamos la lógica del metodo post (ahora soporta upsert para permitir actualización)
-  async crearPortafolio(datos: CreatePortaDto) {
-    const specs = datos.especialidades
-      ? JSON.stringify(datos.especialidades)
-      : undefined;
-    const fotos = datos.fotos_portafolio
-      ? JSON.stringify(datos.fotos_portafolio)
-      : undefined;
-
-    return await this.prisma.portafolios.upsert({
-      where: { id_usuario: Number(datos.id_usuario) },
-      update: {
-        biografia: datos.biografia,
-        experiencia: datos.experiencia,
-        instagram: datos.instagram,
-        especialidades: specs,
-        fotos_portafolio: fotos,
-      },
-      create: {
-        id_usuario: Number(datos.id_usuario),
-        biografia: datos.biografia,
-        experiencia: datos.experiencia,
-        instagram: datos.instagram,
-        especialidades: specs,
-        fotos_portafolio: fotos,
-      },
-    });
+  async getAllPortafolios() {
+    return this.portafoliosRepo.findAll();
   }
 
-  // este es para el método get
-  async getPortafolioByBarber(id: number) {
-    return await this.prisma.portafolios.findFirst({
-      where: { id_usuario: id },
-    });
+  async getPortafolioByBarber(barberId: number) {
+    return this.portafoliosRepo.findByUserId(barberId);
+  }
+
+  async crearPortafolio(data: any) {
+    return this.portafoliosRepo.create(data);
+  }
+
+  async updatePortafolio(id: number, data: any) {
+    const portafolio = await this.portafoliosRepo.findById(id);
+    if (!portafolio) throw new NotFoundException('Portafolio no encontrado');
+    return this.portafoliosRepo.update(id, data);
+  }
+
+  async deletePortafolio(id: number) {
+    const portafolio = await this.portafoliosRepo.findById(id);
+    if (!portafolio) throw new NotFoundException('Portafolio no encontrado');
+    return this.portafoliosRepo.delete(id);
   }
 }

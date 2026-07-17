@@ -1,21 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsRepository } from './notifications.repository';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private notificationsRepo: NotificationsRepository) { }
 
   async getNotifications(userId: number) {
-    return this.prisma.notificaciones.findMany({
-      where: { id_usuario: userId },
-      orderBy: { fecha: 'desc' },
-    });
+    return this.notificationsRepo.findByUserId(userId);
   }
 
   async clearNotifications(userId: number) {
-    return this.prisma.notificaciones.deleteMany({
-      where: { id_usuario: userId },
-    });
+    return this.notificationsRepo.deleteByUserId(userId);
   }
 
   async createNotification(
@@ -23,12 +18,10 @@ export class NotificationsService {
     titulo: string,
     mensaje: string,
   ) {
-    return this.prisma.notificaciones.create({
-      data: {
-        id_usuario,
-        titulo,
-        mensaje,
-      },
+    return this.notificationsRepo.create({
+      id_usuario,
+      titulo,
+      mensaje,
     });
   }
 }
