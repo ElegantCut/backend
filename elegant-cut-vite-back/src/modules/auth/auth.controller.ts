@@ -9,6 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   Res,
+  Redirect,
 } from '@nestjs/common';
 import type { Response } from 'express'; // Importamos Response para poder trabajar con las cookies
 import {

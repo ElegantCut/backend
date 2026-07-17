@@ -162,51 +162,15 @@ export class AppointmentsService {
       console.warn('No se pudo enviar a n8n:', error);
     }
 
-    return reserva;
-  }
-
-  async getHorarios() {
-    return await this.appointmentsRepo.findAllHorarios();
-  }
-
-  // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
-
-  async findOne(id: number) {
-    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
-    return cita;
-  }
-
-  async getAppointmentsByUser(userId: number) {
-    try {
-      const numericUserId = Number(userId);
-      const citas =
-        await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
-
-      const data = citas.map((cita) => {
-        const estadoText = cita.estado_cita?.confirmada
-          ? 'Completada'
-          : 'Pendiente';
-
-        const srv = cita.detalle_cita_servicio?.[0]?.servicios;
-        const nombreServicio = srv ? srv.nombre : 'Servicio general';
-        const precio = srv ? srv.precio : 0;
-
-        let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
-        if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
-        const hh = horaStr.slice(0, 2);
-        const mm = horaStr.slice(2, 4);
-        const horaFormat = `${hh}:${mm}`;
-
-        return {
-          id: cita.id_reservas,
-          fecha: cita.fecha,
-          hora: horaFormat,
-          servicio: nombreServicio,
-          precio: precio,
-          estado: estadoText,
-          observaciones: cita.observaciones,
-          barber_id: cita.id_empleado
+    async createAppointment(datos: CreateAppointmentDto) {
+        const id_servicio = Number(datos.id_servicio);
+        const reservaData = {
+            fecha: new Date(datos.fecha),
+            observaciones: datos.observaciones ? datos.observaciones.substring(0, 70) : undefined,
+            id_usuario: Number(datos.id_usuario),
+            id_empleado: Number(datos.id_empleado),
+            id_estado_cita: Number(datos.id_estado_cita),
+            id_horarios: Number(datos.id_horarios),
         };
       });
 

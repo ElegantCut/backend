@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcryptjs';
 import { CrearUsuarioDto } from './dto/create-users.dto';
@@ -115,6 +115,22 @@ export class UsersService implements IUserIntegration {
   }
 
   async crearUsuario(data: CrearUsuarioDto) {
+    // Check if email already exists
+    const existingUserByEmail = await this.prisma.usuarios.findFirst({
+      where: { email: data.email },
+    });
+    if (existingUserByEmail) {
+      throw new BadRequestException('Email ya registrado');
+    }
+
+    // Check if username already exists
+    const existingUserByUsername = await this.prisma.usuarios.findFirst({
+      where: { username: data.username },
+    });
+    if (existingUserByUsername) {
+      throw new BadRequestException('Nombre de usuario ya registrado');
+    }
+
     // Encriptar la contraseña antes de guardar el usuario (Centralizado, cubre Admin y Registro)
     const hashedPassword = await this.hashPassword(data.password_hash);
 

@@ -146,9 +146,7 @@ export class AuthService {
     }
 
     if (!usuario) {
-      return {
-        message: 'Si el correo existe en nuestro sistema, recibirás un código.',
-      };
+      throw new BadRequestException('Email no registrado');
     }
 
     const codigoSecreto = Math.floor(
@@ -246,6 +244,68 @@ export class AuthService {
     } catch (error) {
       console.error('Error en Google Login:', error);
       throw new UnauthorizedException('Error al validar con Google');
+    }
+  }
+
+  async googleLoginServerSide(reqUser: any) {
+    try {
+      if (!reqUser) throw new BadRequestException('Usuario de Google no proporcionado');
+
+      const { email, firstName, lastName, picture } = reqUser;
+
+      // Buscar usuario por email
+      let user = await this.prisma.usuarios.findFirst({
+        where: { email: email },
+        include: { rol: true },
+      });
+
+      if (!user) {
+        user = await this.prisma.usuarios.create({
+          data: {
+            email: email,
+            prim_nombre: firstName || 'Usuario',
+            apellido1: lastName || 'Google',
+            id_rol: 2, // Rol cliente
+            estado: true,
+            foto_perfil: picture,
+            username: (email || 'user').split('@')[0] + Math.floor(Math.random() * 1000),
+          },
+          include: { rol: true },
+        });
+      }
+
+      let role = user.rol?.nombre_rol ? user.rol.nombre_rol.toLowerCase() : 'cliente';
+      if (role === 'administrador') role = 'admin';
+      if (role === 'barbero') role = 'barber';
+
+      const jwtPayload = {
+        id: user.id_usuario,
+        id_usuario: user.id_usuario,
+        username: user.username,
+        email: user.email,
+        name: `${user.prim_nombre} ${user.apellido1}`,
+        role: role,
+        id_rol: user.id_rol,
+        userId: user.id_usuario,
+      };
+
+      return {
+        success: true,
+        message: 'Login con Google exitoso',
+        token: this.jwtService.sign(jwtPayload),
+        user: {
+          id_usuario: user.id_usuario,
+          username: user.username,
+          email: user.email,
+          name: `${user.prim_nombre} ${user.apellido1}`,
+          role: role,
+          id_rol: user.id_rol,
+          userId: user.id_usuario,
+        },
+      };
+    } catch (error) {
+      console.error('Error en Google Login Server Side:', error);
+      throw new UnauthorizedException('Error al registrar/logear con Google');
     }
   }
 
