@@ -1,0 +1,119 @@
+# Guía de Arquitectura de Backend y Creación de Endpoints (NestJS + Prisma)
+
+Esta guía explica la estructura de archivos en la carpeta `modules` de este backend y cómo crear un endpoint desde cero paso a paso.
+
+---
+
+## 1. ¿Qué hace cada archivo en un Módulo?
+
+En cada subcarpeta de `src/modules` (por ejemplo, `notifications` o `barbers`), encontrarás la siguiente estructura de capas basada en NestJS y Prisma:
+
+### 📁 Module (`*.module.ts`)
+* **¿Qué hace?** Es el archivo de configuración y organización del módulo.
+* **Responsabilidad:**
+  * Define qué controladores (`controllers`) y proveedores (`providers` como servicios y repositorios) forman parte de este módulo.
+  * Importa otros módulos necesarios (como `PrismaModule`).
+  * Exporta servicios para que otros módulos puedan utilizarlos.
+
+### 📁 Controller (`*.controller.ts`)
+* **¿Qué hace?** Es la **puerta de entrada** de la aplicación para las solicitudes externas (HTTP).
+* **Responsabilidad:**
+  * Recibe las peticiones HTTP (`GET`, `POST`, `PUT`, `DELETE`).
+  * Extrae los parámetros de ruta (`@Param`), parámetros de consulta (`@Query`), el cuerpo (`@Body`) o información de autenticación (`@Request`).
+  * Aplica validaciones y guardias de seguridad (por ejemplo, `@UseGuards(JwtAuthGuard)`).
+  * Invoca al **Service** correspondiente y retorna la respuesta al cliente.
+
+### 📁 Service (`*.service.ts`)
+* **¿Qué hace?** Contiene la **lógica de negocio** o reglas operativas de la aplicación.
+* **Responsabilidad:**
+  * Procesa, valida y transforma la información.
+  * Llama al **Repository** para consultar o guardar información en la base de datos.
+  * Coordina procesos complejos (como integraciones externas o envío de notificaciones).
+
+### 📁 Repository (`*.repository.ts`)
+* **¿Qué hace?** Es la capa de **acceso a datos**. Se comunica directamente con la base de datos.
+* **Responsabilidad:**
+  * Ejecuta consultas SQL usando el cliente de **Prisma** (`this.prisma.tabla.findMany`, `create`, etc.).
+  * Evita que el resto del código (como el Service o Controller) dependa directamente del ORM o de la estructura exacta de la base de datos.
+
+---
+
+## 2. Guía paso a paso: Cómo crear un Endpoint desde cero
+
+Imaginemos que queremos crear un nuevo endpoint en el módulo de Barberos para **obtener el total de reservas de un barbero por su ID** (`GET /barbers/:id/total-reservas`).
+
+### Paso 1: Definir la consulta en el Repository (`*.repository.ts`)
+Abre tu archivo de repositorio (por ejemplo, `src/modules/barbers/barbers.repository.ts`) y añade el método que consultará la base de datos con Prisma:
+
+```typescript
+// src/modules/barbers/barbers.repository.ts
+
+async countReservationsByBarberId(barberId: number): Promise<number> {
+  return this.prisma.reservas.count({
+    where: {
+      id_barbero: barberId,
+    },
+  });
+}
+```
+
+### Paso 2: Implementar la lógica en el Service (`*.service.ts`)
+Abre tu servicio (por ejemplo, `src/modules/barbers/barbers.service.ts`) e implementa el método que llamará al repositorio:
+
+```typescript
+// src/modules/barbers/barbers.service.ts
+
+async obtenerTotalReservas(barberId: number) {
+  // Aquí puedes añadir validaciones lógicas (por ejemplo, si el barbero existe)
+  const total = await this.barbersRepo.countReservationsByBarberId(barberId);
+  
+  return {
+    barberId,
+    totalReservas: total,
+  };
+}
+```
+
+### Paso 3: Exponer la ruta en el Controller (`*.controller.ts`)
+Abre tu controlador (por ejemplo, `src/modules/barbers/barbers.controller.ts`) y añade el endpoint usando los decoradores de NestJS y Swagger:
+
+```typescript
+// src/modules/barbers/barbers.controller.ts
+
+@ApiOperation({
+  summary: 'Obtener el total de reservas de un barbero',
+  description: 'Devuelve un contador con el número total de reservas asociadas al barbero.',
+})
+@ApiResponse({ status: 200, description: 'Total de reservas obtenido con éxito.' })
+@Get(':id/total-reservas') // Define la ruta final: GET /barbers/:id/total-reservas
+async obtenerTotalReservas(
+  @Param('id', ParseIntPipe) id: number, // ParseIntPipe convierte ':id' de String a Number automáticamente
+) {
+  return this.barbersService.obtenerTotalReservas(id);
+}
+```
+
+### Paso 4: Registrar en el Module (`*.module.ts`)
+* **Si estás añadiendo el endpoint a un módulo existente:** No necesitas cambiar nada, ya que el Controlador, Servicio y Repositorio ya están registrados en su respectivo `*.module.ts`.
+* **Si es un módulo completamente nuevo:** Debes crear la carpeta con sus archivos y declararlos en el decorador `@Module()`:
+
+```typescript
+@Module({
+  imports: [PrismaModule],
+  controllers: [MyFeatureController],
+  providers: [MyFeatureService, MyFeatureRepository],
+})
+export class MyFeatureModule {}
+```
+Y luego importar ese `MyFeatureModule` en el módulo principal `src/app.module.ts`.
+
+---
+
+## 3. Glosario de Decoradores Comunes en el Controller
+
+* **Métodos HTTP:** `@Get()`, `@Post()`, `@Put()`, `@Patch()`, `@Delete()`.
+* **Parámetros de URL (`/ruta/:id`):** `@Param('id')`.
+* **Parámetros de Query (`/ruta?fecha=2026-01-01`):** `@Query('fecha')`.
+* **Cuerpo de la Petición (Payload):** `@Body()`.
+* **Autenticación (JWT):** `@UseGuards(JwtAuthGuard)`.
+* **Roles:** `@UseGuards(JwtAuthGuard, RolesGuard)` y `@Roles('admin')`.

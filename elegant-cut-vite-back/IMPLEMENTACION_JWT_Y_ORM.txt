@@ -1,0 +1,119 @@
+# Documentación de Implementación: ORM y JWT
+
+Este documento detalla la arquitectura, configuración y patrones de diseño utilizados para la implementación del **ORM (Prisma)** y la autenticación/autorización basada en **JWT (JSON Web Tokens)** en el backend del proyecto **Elegant Cut**.
+
+---
+
+## 1. Implementación del ORM (Prisma)
+
+En este proyecto se utiliza **Prisma ORM** como enlace entre el código de TypeScript y la base de datos **MySQL**. Prisma facilita el mapeo de relaciones de base de datos, la migración de esquemas y la ejecución segura de consultas mediante tipos auto-generados.
+
+### 1.1. Esquema de Base de Datos (`schema.prisma`)
+El archivo de configuración principal se encuentra en [schema.prisma](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/prisma/schema.prisma).
+
+*   **Proveedor y Conexión:** Se conecta a un servidor **MySQL** utilizando la variable de entorno `DATABASE_URL`.
+    ```prisma
+    datasource db {
+      provider = "mysql"
+      url      = env("DATABASE_URL")
+    }
+    ```
+*   **Modelos de Datos:** El esquema define las entidades del negocio (`usuarios`, `reservas`, `servicios`, `detalle_cita_servicio`, `pagos`, `rol`, etc.) mapeando tipos de datos nativos de MySQL, llaves primarias, autoincrementables e índices para optimizar consultas complejas.
+
+### 1.2. Servicio de Prisma y Módulo Global
+La conexión a la base de datos se encapsula dentro del ciclo de vida de NestJS en:
+*   [prisma.service.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/prisma/prisma.service.ts): Extiende de `PrismaClient` e implementa la interfaz `OnModuleInit` para establecer la conexión al iniciar el servidor a través de `this.$connect()`.
+*   [prisma.module.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/prisma/prisma.module.ts): Exporta el `PrismaService` para que pueda ser inyectado en cualquier otro módulo del sistema que requiera interactuar con la base de datos.
+
+### 1.3. Patrón Repositorio
+Para desacoplar las consultas de base de datos de la lógica de negocio (cumpliendo con principios **SOLID**), se utiliza el **Patrón Repositorio** en los módulos. Ejemplos de esto son:
+*   [auth.repository.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/auth.repository.ts): Maneja operaciones para códigos de verificación.
+*   [barbers.repository.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/barbers/barbers.repository.ts): Encapsula consultas de barberos y portafolios mediante relaciones como `include`:
+    ```typescript
+    async findActive() {
+      return this.prisma.usuarios.findMany({
+        where: { id_rol: 3, estado: true },
+        include: {
+          portafolios: true,
+          resenas_recibidas: {
+            where: { estado: 1 },
+            select: { calificacion: true },
+          },
+        },
+        orderBy: { prim_nombre: 'asc' },
+      });
+    }
+    ```
+
+---
+
+## 2. Implementación de Seguridad con JWT (JSON Web Tokens)
+
+La autenticación de usuarios y la seguridad de las rutas se controlan utilizando tokens firmados digitalmente (JWT), delegando la validación de firmas y la configuración del flujo a **Passport** y a los módulos oficiales de NestJS.
+
+### 2.1. Configuración del Módulo (`auth.module.ts`)
+El módulo [auth.module.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/auth.module.ts) configura dinámicamente `JwtModule` inyectando el servicio de configuración (`ConfigService`):
+```typescript
+JwtModule.registerAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: async (configService: ConfigService) => ({
+    secret: configService.get<string>('JWT_SECRET') || 'default-secret-key',
+    signOptions: {
+      expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '24h',
+    },
+  }),
+})
+```
+
+### 2.2. Estrategia de Extracción y Validación (`jwt.strategy.ts`)
+La estrategia definida en [jwt.strategy.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/strategies/jwt.strategy.ts) implementa un extractor flexible que busca el token JWT en dos lugares para soportar clientes móviles y web:
+1.  **Cabecera de Autorización:** `Authorization: Bearer <TOKEN>` (común en aplicaciones móviles/SPA).
+2.  **Cookies HTTP:** En una cookie llamada `jwt` (proporciona mayor seguridad contra ataques XSS).
+
+Una vez extraído, el método `validate(payload)` decodifica el contenido del token y expone los datos del usuario en la solicitud (`req.user`), incluyendo campos vitales como:
+*   `id_usuario` / `id`
+*   `username`
+*   `email`
+*   `role` (normalizado como `admin`, `barber`, `cliente`)
+*   `id_rol`
+
+### 2.3. Guardias de Control de Acceso (Guards)
+
+#### 2.3.1. Protección de Rutas (`jwt-auth.guard.ts`)
+El guardia [jwt-auth.guard.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/guards/jwt-auth.guard.ts) extiende de `AuthGuard('jwt')`. Al colocarse encima de un controlador o endpoint, bloquea cualquier petición que no cuente con un token firmado válido.
+
+#### 2.3.2. Autorización Basada en Roles (`roles.guard.ts`)
+El guardia [roles.guard.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/guards/roles.guard.ts) lee metadatos agregados por un decorador personalizado `@Roles(...)`. 
+*   Compara la propiedad `id_rol` del usuario autenticado en `req.user` con el arreglo de roles permitidos.
+*   Si no tiene autorización, interrumpe el flujo y lanza un `ForbiddenException` (Código HTTP 403: *No tienes permisos suficientes...*).
+
+### 2.4. Flujo de Negocio (`auth.service.ts`)
+El servicio principal [auth.service.ts](file:///c:/Users/edwar/Escritorio/elegant/Elegant-cut--flow-backend/elegant-cut-vite-back/src/modules/auth/auth.service.ts) orquesta los siguientes flujos utilizando JWT:
+1.  **Login Tradicional:** Valida las credenciales utilizando `bcryptjs` para verificar el hash de la contraseña, crea un payload con los datos del perfil y firma el token con `this.jwtService.sign(payload)`.
+2.  **Registro de Usuarios:** Crea los datos base, asigna el rol correspondiente e inserta el registro usando la interfaz del servicio de usuarios.
+3.  **Login Social con Google:**
+    *   Verifica el token de Google recibido del cliente usando `google-auth-library` (`OAuth2Client`).
+    *   Busca/Crea al usuario en la base de datos local y le asocia su `google_id`.
+    *   Genera un token JWT propio de Elegant Cut para autorizar la sesión del usuario.
+4.  **Recuperación de Contraseña:** Genera códigos temporales de verificación, los guarda usando `AuthRepository` con tiempo de expiración y los envía por correo usando `EmailService`.
+
+---
+
+## 3. Variables de Entorno Requeridas (`.env`)
+
+Para que el ORM y el sistema de autenticación por JWT funcionen correctamente, se deben definir las siguientes variables en el archivo `.env`:
+
+```env
+# URL de conexión para Prisma ORM (MySQL)
+DATABASE_URL="mysql://usuario:password@localhost:3306/elegant_cut_db"
+
+# Clave secreta para firmar y validar tokens JWT
+JWT_SECRET="una_clave_secreta_y_segura_para_produccion"
+
+# Tiempo de vida del token
+JWT_EXPIRES_IN="24h"
+
+# Credenciales de Google para la validación de inicio de sesión social
+GOOGLE_CLIENT_ID="tu-google-client-id"
+```
