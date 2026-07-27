@@ -238,12 +238,20 @@ export class AppointmentsService {
 
   // --- MÉTODO PARA RECORDATORIOS (n8n) ---
   async getTomorrowReminders() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
+    // Calcular "mañana" con respecto a la hora de Bogotá (UTC-5)
+    const nowBogota = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+    const tomorrowBogota = new Date(nowBogota);
+    tomorrowBogota.setDate(nowBogota.getDate() + 1);
+
+    const yyyy = tomorrowBogota.getFullYear();
+    const mm = String(tomorrowBogota.getMonth() + 1).padStart(2, '0');
+    const dd = String(tomorrowBogota.getDate()).padStart(2, '0');
+
+    // Construir la medianoche UTC correspondiente para comparar contra la BD
+    const tomorrow = new Date(`${yyyy}-${mm}-${dd}T00:00:00.000Z`);
 
     const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+    dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
 
     const citas = await this.appointmentsRepo.findTomorrowReminders(
       tomorrow,
