@@ -36,8 +36,8 @@ export class DashboardRepository {
         }),
         this.prisma.reservas.findMany({
           where: {
+            id_estado_cita: 2, // Completada
             fecha: { gte: today, lt: tomorrow },
-            id_estado_cita: 2, // 2 = Completada
           },
           include: {
             detalle_cita_servicio: {

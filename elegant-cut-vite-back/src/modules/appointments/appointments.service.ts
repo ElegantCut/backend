@@ -1,17 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { AppointmentsRepository } from './appointments.repository';
-import { UsersRepository } from '../users/users.repository';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
+import type { IUserIntegration } from '../users/interfaces/user-integration.interface';
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     private readonly appointmentsRepo: AppointmentsRepository,
-    private readonly usersRepo: UsersRepository,
+    @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
   ) {}
 
-  async getAvailability(date: string, barberId: number) {
-    return this.appointmentsRepo.getAvailableSlots(date, barberId);
+  async getAvailability(date: string, barberId: number, serviceDuration?: number) {
+    return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
   }
 
   async bookAppointment(data: any) {
@@ -20,6 +21,10 @@ export class AppointmentsService {
 
   async getAll() {
     return this.appointmentsRepo.findAll();
+  }
+
+  async getHorarios() {
+    return this.appointmentsRepo.findAllHorarios();
   }
 
   // Nuevo método formateado específicamente para el listado del panel de Administrador
@@ -106,11 +111,20 @@ export class AppointmentsService {
       id_horarios: Number(datos.id_horarios),
     };
 
-    const reserva =
-      await this.appointmentsRepo.createAppointmentWithTransaction(
+    let reserva: any;
+    try {
+      reserva = await this.appointmentsRepo.createAppointmentWithTransaction(
         reservaData,
         id_servicio,
       );
+    } catch (error: any) {
+      if (error.message === 'HORARIO_OCUPADO') {
+        throw new BadRequestException(
+          'Este horario ya no está disponible para el barbero seleccionado. Por favor, elige otra hora.',
+        );
+      }
+      throw error;
+    }
 
     // --- INTEGRACIÓN CON n8n ---
     try {
@@ -120,7 +134,7 @@ export class AppointmentsService {
       const datosAny = datos as any;
 
       // Buscar el email del cliente en la BD como respaldo
-      const cliente = await this.appointmentsRepo.findUserByUserId(
+      const cliente = await this.usersService.getUserBasicInfo(
         Number(datosAny.id_usuario),
       );
 
@@ -160,60 +174,23 @@ export class AppointmentsService {
     } catch (error) {
       console.warn('No se pudo enviar a n8n:', error);
     }
-
     return reserva;
-  }
-
-  async getHorarios() {
-    return await this.appointmentsRepo.findAllHorarios();
-  }
-
-  // --- NUEVOS MÉTODOS PARA EL CRUD DEL ADMIN ---
-
-  async findOne(id: number) {
-    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
-    return cita;
   }
 
   async getAppointmentsByUser(userId: number) {
     try {
-      const numericUserId = Number(userId);
-      const citas =
-        await this.appointmentsRepo.findAppointmentsByUser(numericUserId);
-
-      const data = citas.map((cita) => {
-        const estadoText = cita.estado_cita?.confirmada
-          ? 'Completada'
-          : 'Pendiente';
-
-        const srv = cita.detalle_cita_servicio?.[0]?.servicios;
-        const nombreServicio = srv ? srv.nombre : 'Servicio general';
-        const precio = srv ? srv.precio : 0;
-
-        let horaStr = cita.horarios?.hora_inicio?.toString() || '000';
-        if (horaStr.length === 3) horaStr = '0' + horaStr; // 900 -> 0900
-        const hh = horaStr.slice(0, 2);
-        const mm = horaStr.slice(2, 4);
-        const horaFormat = `${hh}:${mm}`;
-
-        return {
-          id: cita.id_reservas,
-          fecha: cita.fecha,
-          hora: horaFormat,
-          servicio: nombreServicio,
-          precio: precio,
-          estado: estadoText,
-          observaciones: cita.observaciones,
-          barber_id: cita.id_empleado
-        };
-      });
-
+      const data = await this.appointmentsRepo.findAppointmentsByUser(userId);
       return { success: true, data };
     } catch (error) {
       console.error('Error fetching user appointments:', error);
       return { success: false, data: [] };
     }
+  }
+
+  async findOne(id: number) {
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    return cita;
   }
 
   async update(id: number, data: any) {

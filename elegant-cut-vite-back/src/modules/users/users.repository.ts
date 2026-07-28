@@ -52,6 +52,13 @@ export class UsersRepository {
     return result.id_usuario;
   }
 
+  async createFullUser(data: any) {
+    return this.prisma.usuarios.create({
+      data,
+      include: { rol: true },
+    });
+  }
+
   async updatePassword(
     identifier: string,
     hashedPassword: string,
@@ -66,11 +73,65 @@ export class UsersRepository {
   }
 
   async updateProfilePhoto(userId: number, photoPath: string) {
-    const result = await this.prisma.usuarios.updateMany({
+    const result = await this.prisma.usuarios.update({
       where: { id_usuario: userId },
       data: { foto_perfil: photoPath },
     });
-    return result.count > 0;
+    return result;
+  }
+
+  async updateStatus(id: number, status: boolean) {
+    return this.prisma.usuarios.update({
+      where: { id_usuario: id },
+      data: { estado: status },
+    });
+  }
+
+  async updateUser(id: number, data: any) {
+    return this.prisma.usuarios.update({
+      where: { id_usuario: id },
+      data,
+      include: { rol: true },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.usuarios.findMany();
+  }
+
+  async findByRole(idRol: number) {
+    return this.prisma.usuarios.findMany({
+      where: { id_rol: idRol },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async getUserBasicInfo(id: number) {
+    return this.prisma.usuarios.findUnique({
+      where: { id_usuario: id },
+      select: {
+        prim_nombre: true,
+        apellido1: true,
+        email: true
+      }
+    });
+  }
+
+  async findByEmailOrGoogleId(email: string, google_id: string) {
+    return this.prisma.usuarios.findFirst({
+      where: {
+        OR: [{ email: email }, { google_id: google_id }],
+      },
+      include: { rol: true },
+    });
+  }
+
+  async vincularGoogleId(id: number, google_id: string) {
+    return this.prisma.usuarios.update({
+      where: { id_usuario: id },
+      data: { google_id: google_id },
+      include: { rol: true },
+    });
   }
 
   async findRoleIdByName(roleName: string): Promise<number | null> {

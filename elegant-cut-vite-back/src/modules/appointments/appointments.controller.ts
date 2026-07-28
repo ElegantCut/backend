@@ -49,7 +49,7 @@ export class AppointmentsController {
   @ApiOperation({
     summary: 'Consultar disponibilidad',
     description:
-      'Devuelve los horarios disponibles para un barbero en una fecha específica.',
+      'Devuelve los horarios disponibles para un barbero en una fecha específica, considerando la duración del servicio.',
   })
   @ApiQuery({
     name: 'date',
@@ -57,12 +57,14 @@ export class AppointmentsController {
     example: '2023-12-01',
   })
   @ApiQuery({ name: 'barberId', description: 'ID del barbero', example: '2' })
+  @ApiQuery({ name: 'serviceDuration', description: 'Duración del servicio en minutos', example: '30', required: false })
   @Get('availability')
   async getAvailability(
     @Query('date') date: string,
     @Query('barberId') barberId: string,
+    @Query('serviceDuration') serviceDuration?: string,
   ) {
-    return this.appointmentsService.getAvailability(date, +barberId);
+    return this.appointmentsService.getAvailability(date, +barberId, serviceDuration ? +serviceDuration : undefined);
   }
 
   @ApiOperation({

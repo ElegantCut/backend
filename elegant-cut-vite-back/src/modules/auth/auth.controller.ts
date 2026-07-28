@@ -9,6 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   Res,
+  Redirect,
 } from '@nestjs/common';
 import type { Response } from 'express'; // Importamos Response para poder trabajar con las cookies
 import {
@@ -23,15 +24,13 @@ import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard'; // importa el guard que creamos
-import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth - Autenticación')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  ) { }
   //protegemos la ruta de login con el guard
   @ApiBearerAuth()
   @ApiOperation({
@@ -99,21 +98,6 @@ export class AuthController {
     // Retornamos el resultado completo incluyendo el token al igual que el login normal
     return result;
   }
-
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Obtener mi perfil',
-    description:
-      'Devuelve los detalles completos del usuario que está conectado.',
-  })
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  async getProfile(@Request() req) {
-    const user = await this.usersService.findOne(req.user.id_usuario);
-    const { password_hash, ...userData } = user as any;
-    return { success: true, data: userData };
-  }
-
   //creamos el nuevo método put
 
   @ApiOperation({ summary: 'Restablecer Contraseña' })

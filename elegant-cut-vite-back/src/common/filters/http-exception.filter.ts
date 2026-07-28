@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
+    console.error('Unhandled exception:', exception);
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -22,10 +23,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     // Obtenemos el mensaje original de la excepción
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Error interno del servidor';
+    let message: any = 'Error interno del servidor';
+    if (exception instanceof HttpException) {
+      const res = exception.getResponse();
+      if (typeof res === 'object' && res !== null && 'message' in res) {
+        message = (res as any).message;
+      } else {
+        message = res;
+      }
+    }
 
     // Construimos una respuesta JSON unificada para que el Frontend (Flutter) siempre
     // reciba los errores con la misma estructura y pueda procesarlos fácilmente.

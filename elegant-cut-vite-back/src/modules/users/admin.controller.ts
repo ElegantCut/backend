@@ -7,15 +7,15 @@ import {
   Param,
   ParseIntPipe,
   Put,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
+import { UpdateUsuarioDto } from './dto/update-users.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UseGuards } from '@nestjs/common';
 
 @ApiTags('Admin - Administradores')
 @Controller('admin')
@@ -50,7 +50,7 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Actualizar administrador' })
   @Patch('administrators/:id')
-  async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
+  async updateAdmin(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateUsuarioDto) {
     return this.usersService.update(id, data);
   }
   @ApiBearerAuth()
