@@ -1,7 +1,8 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
-import { PrismaModule } from './prisma/prisma.module'; // La ruta a tu carpeta prisma
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BarbersModule } from './modules/barbers/barbers.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
@@ -15,15 +16,19 @@ import { EmailModule } from './modules/email/email.module';
 import { PortabarberoModule } from './portabarbero/portabarbero.module';
 import { ServiceUModule } from './modules/service_u/service_u.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // En Docker, las variables llegan del docker-compose environment:, no de un .env
-      // ignoreEnvFile evita que NestJS busque un .env inexistente y pierda las vars del proceso
       ignoreEnvFile:
         process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL,
+    }),
+    // Caché en Memoria (In-Memory Cache) configurado globalmente
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60000, // 60 segundos (los datos cacheados expiran en 1 minuto)
     }),
     PrismaModule,
     AuthModule,
@@ -39,6 +44,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     PortabarberoModule,
     UploadsModule,
     ServiceUModule,
+    NotificationsModule,
   ],
 })
 export class AppModule implements NestModule {
