@@ -1,10 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { AuthService } from '../../src/modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { EmailService } from '../../modules/email/email.service';
-import { AuthRepository } from './auth.repository';
-import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
+import { EmailService } from '../../src/modules/email/email.service';
+import { AuthRepository } from '../../src/modules/auth/auth.repository';
+import { USER_INTEGRATION_SERVICE } from '../../src/modules/users/interfaces/user-integration.interface';
 import { UnauthorizedException } from '@nestjs/common';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CrearUsuarioDto } from '../../src/modules/users/dto/create-users.dto';
 
 describe('AuthService - Pruebas Unitarias Iniciales', () => {
     let service: AuthService;
@@ -34,11 +37,16 @@ describe('AuthService - Pruebas Unitarias Iniciales', () => {
     });
 
 
+    //desde aquí es la programaciond de las pruebas que se van a hacer acorde a las hu
+ 
+
+    //este fue una prueba
     it('el servicio de autenticacion debe estar definido', () => {
         expect(service).toBeDefined();
     });
 
 
+    //este fue una prueba que no se pudo realizar ya que al compilar dava error
     it('Debe arrojar "Contraseña incorrecta" si la contraseña no coincide', async () => {
         mockUsersService.findOneByUsername.mockResolvedValue({
             id_usuario: 1,
@@ -72,4 +80,19 @@ describe('AuthService - Pruebas Unitarias Iniciales', () => {
     });
 
 
+    it('Debe rechazar el registro si el nombre contiene caracteres especiales y números (112, @, $, #)', async () => {
+        const datosConCaracteresEspeciales = plainToInstance(CrearUsuarioDto, {
+            username: 'juan123',
+            prim_nombre: 'juan123#@',
+            apellido1: 'pérez',
+            email: 'prueba@gmail.com',
+            password_hash: 'clavesegura123',
+        });
+
+        const errores = await validate(datosConCaracteresEspeciales);
+        expect(errores.length).toBeGreaterThan(0); // debe haber al menos un error
+        
+        const errorNombre = errores.find(e => e.property === 'prim_nombre');
+        expect(errorNombre).toBeDefined();
+    });
 });
