@@ -102,8 +102,17 @@ export class AppointmentsService {
 
   async createAppointment(datos: CreateAppointmentDto) {
     const id_servicio = Number(datos.id_servicio);
+    const fechaReserva = new Date(datos.fecha);
+
+    // Validación de regla de negocio: no agendar en el pasado (RF-006)
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Inicio del día actual
+    if (fechaReserva < hoy) {
+      throw new BadRequestException('No puedes agendar citas en el pasado');
+    }
+
     const reservaData = {
-      fecha: new Date(datos.fecha),
+      fecha: fechaReserva,
       observaciones: datos.observaciones,
       id_usuario: Number(datos.id_usuario),
       id_empleado: Number(datos.id_empleado),
