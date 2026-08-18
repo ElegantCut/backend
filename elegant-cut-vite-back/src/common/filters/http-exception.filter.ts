@@ -41,6 +41,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       message: message,
+      stack: exception instanceof Error ? exception.stack : String(exception)
     });
   }
 }

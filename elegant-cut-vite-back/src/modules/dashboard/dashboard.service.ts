@@ -17,12 +17,14 @@ export class DashboardService {
 
   async generateStatsPdf(): Promise<Buffer> {
     const statsResult = await this.getStats();
-    const stats = statsResult.data;
+    const stats = statsResult.data || { citasHoy: 0, ingresosHoy: 0, clientesNuevos: 0, citasPendientes: 0, citasCompletadas: 0, citasCanceladas: 0 };
+    const activityResult = await this.getActivity();
+    const activity = activityResult || [];
 
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({
         size: 'A4',
-        margin: 50,
+        margin: 0, // Controlamos los márgenes manualmente
       });
 
       const chunks: any[] = [];
@@ -31,241 +33,183 @@ export class DashboardService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', (err) => reject(err));
 
-      // Colores de la paleta
-      const primaryColor = '#007AFF'; // iOS Blue
-      const secondaryColor = '#8E8E93'; // iOS Gray
-      const successColor = '#34C759'; // iOS Green
-      const dangerColor = '#FF3B30'; // iOS Red
-      const warningColor = '#FF9500'; // iOS Orange
-      const textColor = '#1C1C1E'; // iOS Dark text
-      const lightBg = '#F2F2F7'; // iOS Light background
+      // --- PALETA DE COLORES PREMIUM (Beauty / Spa) ---
+      const darkBg = '#111111';
+      const goldAccent = '#D4AF37'; // Dorado premium
+      const lightBg = '#F8F9FA';
+      const cardBg = '#FFFFFF';
+      const textDark = '#1A1A1A';
+      const textMuted = '#6C757D';
+      
+      const successColor = '#2E7D32';
+      const warningColor = '#F57F17';
+      const dangerColor = '#C62828';
 
-      // Encabezado principal (Header)
-      doc
-        .fillColor(primaryColor)
-        .fontSize(26)
-        .font('Helvetica-Bold')
-        .text('ELEGANT CUT', 50, 50);
+      // --- FONDO GENERAL ---
+      doc.rect(0, 0, doc.page.width, doc.page.height).fill(lightBg);
 
-      doc
-        .fillColor(textColor)
-        .fontSize(10)
-        .font('Helvetica')
-        .text('SISTEMA DE GESTIÓN DE BARBERÍA', 50, 80);
+      // --- HEADER ---
+      doc.rect(0, 0, doc.page.width, 120).fill(darkBg);
+      
+      // Detalles dorados en header
+      doc.rect(0, 116, doc.page.width, 4).fill(goldAccent);
 
-      // Línea divisoria superior
-      doc
-        .strokeColor(primaryColor)
-        .lineWidth(2)
-        .moveTo(50, 95)
-        .lineTo(545, 95)
-        .stroke();
+      doc.fillColor('#FFFFFF')
+         .fontSize(32)
+         .font('Helvetica-Bold')
+         .text('ELEGANT CUT', 50, 40);
 
-      // Información del Reporte
-      doc
-        .fillColor(textColor)
-        .fontSize(16)
-        .font('Helvetica-Bold')
-        .text('Reporte General de Estadísticas', 50, 115);
+      doc.fillColor(goldAccent)
+         .fontSize(12)
+         .font('Helvetica')
+         .text('EXECUTIVE DASHBOARD REPORT', 50, 75, { letterSpacing: 2 });
 
       const fechaActual = new Date().toLocaleString('es-ES', {
         dateStyle: 'long',
         timeStyle: 'short',
       });
 
-      doc
-        .fillColor(secondaryColor)
-        .fontSize(10)
-        .font('Helvetica')
-        .text(`Generado el: ${fechaActual}`, 50, 140)
-        .moveDown(2);
+      doc.fillColor('#AAAAAA')
+         .fontSize(10)
+         .text(`Generado: ${fechaActual}`, doc.page.width - 250, 50, { align: 'right', width: 200 });
 
-      // Sección 1: Tarjetas / Widgets de Métricas Clave
-      const cardY = 175;
+      // --- MÉTRICAS PRINCIPALES ---
+      let currentY = 160;
+      doc.fillColor(textDark)
+         .fontSize(16)
+         .font('Helvetica-Bold')
+         .text('RESUMEN DE MÉTRICAS (HOY)', 50, currentY);
+
+      currentY += 30;
       const cardWidth = 110;
       const cardHeight = 80;
-      const spacing = 12;
+      const spacing = 18;
 
-      // Tarjeta 1: Citas Hoy
-      this.drawMetricCard(
-        doc,
-        50,
-        cardY,
-        cardWidth,
-        cardHeight,
-        'Citas Hoy',
-        stats.citasHoy.toString(),
-        primaryColor,
-        lightBg,
-      );
+      this.drawPremiumCard(doc, 50, currentY, cardWidth, cardHeight, 'CITAS HOY', (stats.citasHoy || 0).toString(), goldAccent);
+      this.drawPremiumCard(doc, 50 + cardWidth + spacing, currentY, cardWidth, cardHeight, 'INGRESOS HOY', `$${(stats.ingresosHoy || 0).toLocaleString('es-ES')}`, successColor);
+      this.drawPremiumCard(doc, 50 + (cardWidth + spacing) * 2, currentY, cardWidth, cardHeight, 'CLIENTES NUEVOS', (stats.clientesNuevos || 0).toString(), textDark);
+      this.drawPremiumCard(doc, 50 + (cardWidth + spacing) * 3, currentY, cardWidth, cardHeight, 'PENDIENTES', (stats.citasPendientes || 0).toString(), warningColor);
 
-      // Tarjeta 2: Ingresos Hoy
-      this.drawMetricCard(
-        doc,
-        50 + cardWidth + spacing,
-        cardY,
-        cardWidth,
-        cardHeight,
-        'Ingresos Hoy',
-        `$${stats.ingresosHoy.toLocaleString('es-ES')}`,
-        successColor,
-        lightBg,
-      );
+      // --- ESTADO GENERAL DE CITAS ---
+      currentY += 120;
+      doc.fillColor(textDark)
+         .fontSize(16)
+         .font('Helvetica-Bold')
+         .text('ESTADO GENERAL DE CITAS', 50, currentY);
 
-      // Tarjeta 3: Clientes Nuevos
-      this.drawMetricCard(
-        doc,
-        50 + (cardWidth + spacing) * 2,
-        cardY,
-        cardWidth,
-        cardHeight,
-        'Clientes Nuevos',
-        stats.clientesNuevos.toString(),
-        dangerColor,
-        lightBg,
-      );
+      currentY += 30;
+      doc.roundedRect(50, currentY, doc.page.width - 100, 70, 6)
+         .fill(cardBg)
+         .lineWidth(1)
+         .strokeColor('#E0E0E0')
+         .stroke();
 
-      // Tarjeta 4: Citas Pendientes
-      this.drawMetricCard(
-        doc,
-        50 + (cardWidth + spacing) * 3,
-        cardY,
-        cardWidth,
-        cardHeight,
-        'Pendientes',
-        stats.citasPendientes.toString(),
-        warningColor,
-        lightBg,
-      );
+      const colW = (doc.page.width - 100) / 3;
+      
+      this.drawStatusCol(doc, 50, currentY, colW, 'Completadas', (stats.citasCompletadas || 0).toString(), successColor);
+      this.drawStatusCol(doc, 50 + colW, currentY, colW, 'Pendientes', (stats.citasPendientes || 0).toString(), warningColor);
+      this.drawStatusCol(doc, 50 + colW * 2, currentY, colW, 'Canceladas', (stats.citasCanceladas || 0).toString(), dangerColor);
 
-      // Sección 2: Resumen del Estado de Citas
-      doc
-        .fillColor(textColor)
-        .fontSize(14)
-        .font('Helvetica-Bold')
-        .text('Resumen del Estado de Citas', 50, 290)
-        .moveDown(1);
+      // Líneas separadoras
+      doc.moveTo(50 + colW, currentY + 15).lineTo(50 + colW, currentY + 55).strokeColor('#E0E0E0').stroke();
+      doc.moveTo(50 + colW * 2, currentY + 15).lineTo(50 + colW * 2, currentY + 55).strokeColor('#E0E0E0').stroke();
 
-      // Dibujar caja de resumen
-      const summaryY = 320;
-      doc
-        .roundedRect(50, summaryY, 495, 100, 8)
-        .fillAndStroke(lightBg, '#E5E5EA');
+      // --- ACTIVIDAD RECIENTE (TABLA) ---
+      currentY += 110;
+      doc.fillColor(textDark)
+         .fontSize(16)
+         .font('Helvetica-Bold')
+         .text('ÚLTIMAS CITAS REGISTRADAS', 50, currentY);
 
-      // Texto dentro de la caja de resumen
-      const colWidth = 165;
+      currentY += 30;
+      
+      // Tabla Header
+      doc.rect(50, currentY, doc.page.width - 100, 30).fill(darkBg);
+      doc.fillColor(goldAccent).fontSize(10).font('Helvetica-Bold');
+      doc.text('ID', 60, currentY + 10, { width: 50 });
+      doc.text('CLIENTE', 120, currentY + 10, { width: 150 });
+      doc.text('FECHA Y HORA', 280, currentY + 10, { width: 150 });
+      doc.text('ESTADO', 440, currentY + 10, { width: 100 });
 
-      // Columna 1: Completadas
-      doc
-        .fillColor(successColor)
-        .fontSize(22)
-        .font('Helvetica-Bold')
-        .text(stats.citasCompletadas.toString(), 50 + 20, summaryY + 25, {
-          width: colWidth - 40,
-          align: 'center',
-        })
-        .fillColor(textColor)
-        .fontSize(11)
-        .font('Helvetica')
-        .text('Completadas', 50 + 20, summaryY + 55, {
-          width: colWidth - 40,
-          align: 'center',
-        });
+      currentY += 30;
 
-      // Columna 2: Pendientes
-      doc
-        .fillColor(warningColor)
-        .fontSize(22)
-        .font('Helvetica-Bold')
-        .text(
-          stats.citasPendientes.toString(),
-          50 + colWidth + 20,
-          summaryY + 25,
-          { width: colWidth - 40, align: 'center' },
-        )
-        .fillColor(textColor)
-        .fontSize(11)
-        .font('Helvetica')
-        .text('Pendientes', 50 + colWidth + 20, summaryY + 55, {
-          width: colWidth - 40,
-          align: 'center',
-        });
+      // Filas de la tabla
+      doc.font('Helvetica').fontSize(10);
+      let isEven = false;
 
-      // Columna 3: Canceladas
-      doc
-        .fillColor(dangerColor)
-        .fontSize(22)
-        .font('Helvetica-Bold')
-        .text(
-          stats.citasCanceladas.toString(),
-          50 + colWidth * 2 + 20,
-          summaryY + 25,
-          { width: colWidth - 40, align: 'center' },
-        )
-        .fillColor(textColor)
-        .fontSize(11)
-        .font('Helvetica')
-        .text('Canceladas', 50 + colWidth * 2 + 20, summaryY + 55, {
-          width: colWidth - 40,
-          align: 'center',
-        });
+      if (activity.length === 0) {
+          doc.rect(50, currentY, doc.page.width - 100, 40).fill(cardBg);
+          doc.fillColor(textMuted).text('No hay citas recientes registradas.', 50, currentY + 15, { align: 'center', width: doc.page.width - 100 });
+      } else {
+          for (const item of activity) {
+            doc.rect(50, currentY, doc.page.width - 100, 30).fill(isEven ? '#F8F9FA' : cardBg);
+            
+            doc.fillColor(textDark);
+            doc.text(`#${item.id_reservas}`, 60, currentY + 10, { width: 50 });
+            doc.text(`${item.usuarios?.prim_nombre || 'N/A'} ${item.usuarios?.apellido1 || ''}`, 120, currentY + 10, { width: 150 });
+            
+            const dateStr = new Date(item.fecha).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+            doc.text(dateStr, 280, currentY + 10, { width: 150 });
 
-      // Líneas divisorias de la tabla de resumen
-      doc
-        .strokeColor('#E5E5EA')
-        .lineWidth(1)
-        .moveTo(50 + colWidth, summaryY + 20)
-        .lineTo(50 + colWidth, summaryY + 80)
-        .moveTo(50 + colWidth * 2, summaryY + 20)
-        .lineTo(50 + colWidth * 2, summaryY + 80)
-        .stroke();
+            let estadoText = 'Desconocido';
+            let estadoColor = textDark;
+            if (item.id_estado_cita === 1) { estadoText = 'Pendiente'; estadoColor = warningColor; }
+            if (item.id_estado_cita === 2) { estadoText = 'Completada'; estadoColor = successColor; }
+            if (item.id_estado_cita === 3) { estadoText = 'Cancelada'; estadoColor = dangerColor; }
 
-      // Footer
-      doc
-        .strokeColor('#E5E5EA')
-        .lineWidth(1)
-        .moveTo(50, 720)
-        .lineTo(545, 720)
-        .stroke();
+            doc.fillColor(estadoColor).font('Helvetica-Bold').text(estadoText, 440, currentY + 10, { width: 100 });
+            doc.font('Helvetica');
 
-      doc
-        .fillColor(secondaryColor)
-        .fontSize(8)
-        .font('Helvetica')
-        .text(
-          'Elegant Cut - Reporte del Administrador. Generado automáticamente.',
-          50,
-          735,
-          { align: 'center' },
-        );
+            currentY += 30;
+            isEven = !isEven;
+            
+            // Paginación si se pasa de página
+            if (currentY > doc.page.height - 100) {
+               doc.addPage();
+               doc.rect(0, 0, doc.page.width, doc.page.height).fill(lightBg);
+               currentY = 50;
+            }
+          }
+      }
+
+      // --- FOOTER ---
+      const footerY = doc.page.height - 60;
+      doc.moveTo(50, footerY).lineTo(doc.page.width - 50, footerY).strokeColor('#E0E0E0').stroke();
+      doc.fillColor(textMuted)
+         .fontSize(9)
+         .text('Elegant Cut - Confidencial. Uso exclusivo administrativo.', 50, footerY + 15, { align: 'center', width: doc.page.width - 100 });
 
       doc.end();
     });
   }
 
-  private drawMetricCard(
-    doc: any,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    title: string,
-    value: string,
-    color: string,
-    bgColor: string,
-  ) {
-    doc.roundedRect(x, y, width, height, 8).fillAndStroke(bgColor, '#E5E5EA');
+  private drawPremiumCard(doc: any, x: number, y: number, w: number, h: number, title: string, value: string, valueColor: string) {
+    doc.roundedRect(x, y, w, h, 6)
+       .fill('#FFFFFF')
+       .lineWidth(1)
+       .strokeColor('#E0E0E0')
+       .stroke();
 
-    doc
-      .fillColor('#8E8E93')
-      .fontSize(9)
-      .font('Helvetica-Bold')
-      .text(title.toUpperCase(), x + 10, y + 15, { width: width - 20 });
+    doc.fillColor('#6C757D')
+       .fontSize(9)
+       .font('Helvetica-Bold')
+       .text(title, x + 10, y + 15, { width: w - 20, align: 'left' });
 
-    doc
-      .fillColor(color)
-      .fontSize(18)
-      .font('Helvetica-Bold')
-      .text(value, x + 10, y + 35, { width: width - 20 });
+    doc.fillColor(valueColor)
+       .fontSize(22)
+       .font('Helvetica-Bold')
+       .text(value, x + 10, y + 35, { width: w - 20, align: 'left' });
+  }
+
+  private drawStatusCol(doc: any, x: number, y: number, w: number, label: string, value: string, color: string) {
+    doc.fillColor(color)
+       .fontSize(24)
+       .font('Helvetica-Bold')
+       .text(value, x, y + 15, { width: w, align: 'center' });
+       
+    doc.fillColor('#6C757D')
+       .fontSize(10)
+       .font('Helvetica')
+       .text(label, x, y + 45, { width: w, align: 'center' });
   }
 }

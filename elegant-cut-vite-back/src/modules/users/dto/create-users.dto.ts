@@ -7,6 +7,7 @@ import {
   IsDate,
   IsNotEmpty,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -20,6 +21,7 @@ export class CrearUsuarioDto {
 
   @ApiProperty({ description: 'Primer nombre del usuario', example: 'Juan' })
   @IsString()
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
   prim_nombre: string;
 
   @ApiPropertyOptional({
@@ -28,10 +30,12 @@ export class CrearUsuarioDto {
   })
   @IsOptional()
   @IsString()
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
   seg_nombre?: string;
 
   @ApiProperty({ description: 'Primer apellido del usuario', example: 'Pérez' })
   @IsString()
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
   apellido1: string;
 
   @ApiPropertyOptional({
@@ -40,6 +44,7 @@ export class CrearUsuarioDto {
   })
   @IsOptional()
   @IsString()
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
   apellido2?: string;
 
   @ApiProperty({

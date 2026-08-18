@@ -11,6 +11,7 @@ import { PortabarberoService } from './portabarbero.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('PortaBarbero - Portafolio de Barberos')
 @Controller('portabarbero')
@@ -18,9 +19,10 @@ export class PortabarberoController {
   constructor(private readonly portabarberoService: PortabarberoService) { }
 
   //vamos a crear el método post
-  @ApiBearerAuth()
-  @Roles(1, 3) // Admin y Barbero
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // @ApiBearerAuth()
+  // @Roles(1, 3) // Admin y Barbero
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  @Public()
   @ApiOperation({
     summary: 'Crear perfil/portafolio de un barbero',
     description:

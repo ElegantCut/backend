@@ -83,8 +83,11 @@ export class BarbersService {
         if ('experiencia' in data) { portafolioData.experiencia = data.experiencia; delete data.experiencia; }
         if ('especialidades' in data) { portafolioData.especialidades = data.especialidades; delete data.especialidades; }
 
-        // Actualizar usuario principal
-        const actualizado = await this.barbersRepo.updateBarber(id, data);
+        // Actualizar usuario principal (solo si quedan datos por actualizar)
+        let actualizado = await this.findOne(id);
+        if (Object.keys(data).length > 0) {
+            actualizado = await this.barbersRepo.updateBarber(id, data);
+        }
 
         // Actualizar o crear portafolio si se enviaron datos
         if (Object.keys(portafolioData).length > 0) {

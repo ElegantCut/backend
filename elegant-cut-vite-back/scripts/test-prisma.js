@@ -1,4 +1,5 @@
 
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -18,7 +19,7 @@ async function main() {
     console.log('Total barbers found:', barbers.length);
     barbers.forEach(b => {
       const resenas = b.resenas_recibidas || [];
-      console.log(`Barber ${b.id_usuario} (${b.prim_nombre}): ${resenas.length} reviews`);
+      console.log(`Barber ${b.id_usuario} (${b.prim_nombre}): ${resenas.length} reviews, foto_perfil: "${b.foto_perfil}"`);
       if (resenas.length > 0) {
         console.log('Reviews sample:', resenas);
       }
