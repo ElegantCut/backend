@@ -10,7 +10,7 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "modulkeNameMapper": {
+  "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1"
   }
 }
