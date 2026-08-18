@@ -96,8 +96,8 @@ export class AppointmentsService {
     }
   }
 
-  async getAppointmentsByBarber(barberId: number) {
-    return await this.appointmentsRepo.findAppointmentsByBarber(barberId);
+  async getAppointmentsByBarber(barberId: number, date?: string) {
+    return await this.appointmentsRepo.findAppointmentsByBarber(barberId, date);
   }
 
   async createAppointment(datos: CreateAppointmentDto) {
