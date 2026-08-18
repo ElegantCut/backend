@@ -217,8 +217,37 @@ export class AppointmentsService {
           throw new BadRequestException('Solo se pueden reprogramar citas en estado Pendiente');
       }
 
+      // REGLA DE NEGOCIO: Fechas pasadas
+      const nuevaFecha = new Date(data.fecha);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (nuevaFecha < hoy) {
+          throw new BadRequestException('No se pueden reprogramar citas en fechas pasadas');
+      }
+
+      // REGLA DE NEGOCIO: Disponibilidad y cruce de horarios
+      const idEmpleado = data.id_empleado || cita.id_empleado;
+      const slotsDisponibles = await this.appointmentsRepo.getAvailableSlots(data.fecha, idEmpleado);
+      const slotSeleccionado = slotsDisponibles.find(s => s.id === data.id_horarios);
+
+      if (!slotSeleccionado) {
+          throw new BadRequestException('El horario seleccionado no existe');
+      }
+
+      const cambiaFecha = nuevaFecha.toISOString().split('T')[0] !== cita.fecha.toISOString().split('T')[0];
+      const cambiaEmpleado = idEmpleado !== cita.id_empleado;
+      const cambiaHorario = data.id_horarios !== cita.id_horarios;
+
+      if (!slotSeleccionado.isAvailable) {
+          // Si el slot está ocupado, verificamos si es por esta misma cita o por otra.
+          // Si el usuario intentó cambiar a una hora/fecha/empleado distinto y el slot está ocupado, denegamos.
+          if (cambiaFecha || cambiaEmpleado || cambiaHorario) {
+              throw new BadRequestException('El horario seleccionado ya no está disponible');
+          }
+      }
+
       const updateData: any = {
-          fecha: new Date(data.fecha),
+          fecha: nuevaFecha,
           id_horarios: data.id_horarios,
       };
 
