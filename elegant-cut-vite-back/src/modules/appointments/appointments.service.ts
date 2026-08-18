@@ -102,8 +102,17 @@ export class AppointmentsService {
 
   async createAppointment(datos: CreateAppointmentDto) {
     const id_servicio = Number(datos.id_servicio);
+    const fechaReserva = new Date(datos.fecha);
+
+    // REGLA DE NEGOCIO: Impedir registro de citas en fechas pasadas
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Ignorar la hora para comparar solo fechas completas
+    if (fechaReserva < hoy) {
+      throw new BadRequestException('No se pueden agendar citas en fechas pasadas');
+    }
+
     const reservaData = {
-      fecha: new Date(datos.fecha),
+      fecha: fechaReserva,
       observaciones: datos.observaciones,
       id_usuario: Number(datos.id_usuario),
       id_empleado: Number(datos.id_empleado),
