@@ -34,6 +34,8 @@ export class PqrsController {
     description:
       'Permite a clientes o visitantes registrar una Petición, Queja, Reclamo o Sugerencia.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 201,
     description: 'La solicitud se ha registrado exitosamente.',

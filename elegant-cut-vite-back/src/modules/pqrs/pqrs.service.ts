@@ -17,12 +17,16 @@ export class PqrsService {
     // Enviar email de confirmación
     const radicado = `PQRS-${id}-${new Date().getFullYear()}`;
 
-    await this.emailService.sendPqrsConfirmation(
-      data.email,
-      data.nombre_completo,
-      radicado,
-      data.tipo_solicitud,
-    );
+    try {
+      await this.emailService.sendPqrsConfirmation(
+        data.email,
+        data.nombre_completo,
+        radicado,
+        data.tipo_solicitud,
+      );
+    } catch (e) {
+      console.warn('No se pudo enviar el correo de confirmacion de PQRS', e.message);
+    }
 
     return {
       success: true,
