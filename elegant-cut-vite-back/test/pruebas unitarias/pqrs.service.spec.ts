@@ -3,7 +3,7 @@ import { PqrsService } from '../../src/modules/pqrs/pqrs.service';
 import { PqrsRepository } from '../../src/modules/pqrs/pqrs.repository';
 import { EmailService } from '../../src/modules/email/email.service';
 import { NotFoundException } from '@nestjs/common';
-import { CrearPqrsDto } from '../../src/modules/pqrs/dto/create-pqrs.dto';
+import { CrearPqrsDto, PqrsTipoSolicitud } from '../../src/modules/pqrs/dto/create-pqrs.dto';
 
 describe('PqrsService - Pruebas Unitarias', () => {
   let service: PqrsService;
@@ -43,10 +43,12 @@ describe('PqrsService - Pruebas Unitarias', () => {
   describe('Creación de PQRS (RF-009)', () => {
     it('Debe crear una PQRS, generar un radicado y enviar correo de confirmación', async () => {
       const dto: CrearPqrsDto = {
+        id_usuario: 1,
         nombre_completo: 'Usuario Prueba',
         email: 'prueba@test.com',
-        celular: '3001234567',
-        tipo_solicitud: 'Queja',
+        telefono: '3001234567',
+        tipo_solicitud: PqrsTipoSolicitud.queja,
+        asunto: 'Servicio',
         descripcion: 'El barbero llegó tarde',
       };
 
@@ -67,7 +69,7 @@ describe('PqrsService - Pruebas Unitarias', () => {
         'prueba@test.com',
         'Usuario Prueba',
         radicadoEsperado,
-        'Queja'
+        PqrsTipoSolicitud.queja
       );
     });
   });
@@ -113,11 +115,12 @@ describe('PqrsService - Pruebas Unitarias', () => {
     it('Debe actualizar el estado de una PQRS existente', async () => {
       // Mock para findOne simulando que sí existe (requerido por service.update)
       mockRepo.findOne.mockResolvedValue({ id_pqrs: 10 });
-      mockRepo.update.mockResolvedValue({ success: true });
+      mockRepo.update.mockResolvedValue({ id_pqrs: 10, estado: 'Cerrado' });
 
       const resultado = await service.update(10, { estado: 'Cerrado' });
 
-      expect(resultado.success).toBe(true);
+      expect(resultado.estado).toBe('Cerrado');
+      expect(resultado.id_pqrs).toBe(10);
       expect(mockRepo.update).toHaveBeenCalledWith(10, { estado: 'Cerrado' });
     });
   });
