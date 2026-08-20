@@ -8,7 +8,7 @@ export class PqrsService {
   constructor(
     private readonly pqrsRepo: PqrsRepository,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   async create(data: CrearPqrsDto) {
     // Guardar PQRS en DB
@@ -17,12 +17,16 @@ export class PqrsService {
     // Enviar email de confirmación
     const radicado = `PQRS-${id}-${new Date().getFullYear()}`;
 
-    await this.emailService.sendPqrsConfirmation(
-      data.email,
-      data.nombre_completo,
-      radicado,
-      data.tipo_solicitud,
-    );
+    try {
+      await this.emailService.sendPqrsConfirmation(
+        data.email,
+        data.nombre_completo,
+        radicado,
+        data.tipo_solicitud,
+      );
+    } catch (e) {
+      console.warn('No se pudo enviar el correo de confirmacion de PQRS', e.message);
+    }
 
     return {
       success: true,
@@ -57,19 +61,19 @@ export class PqrsService {
     // Formato esperado: PQRS-{ID}-{AÑO}
     const parts = radicado.split('-');
     if (parts.length < 2 || parts[0].toUpperCase() !== 'PQRS') {
-      return { success: false, error: 'Formato de radicado inválido' };
+      throw new NotFoundException('Formato de radicado inválido');
     }
 
     // El ID es la segunda parte del radicado
-    const id = parseInt(parts[1], 10);
-    if (isNaN(id)) {
-      return { success: false, error: 'ID de radicado inválido' };
+    const id = Number.parseInt(parts[1], 10);
+    if (Number.isNaN(id)) {
+      throw new NotFoundException('ID de radicado inválido');
     }
 
     const pqrs = await this.pqrsRepo.findByRadicado(id);
 
     if (!pqrs) {
-      return { success: false, error: 'No se encontró la PQRS' };
+      throw new NotFoundException('No se encontró la PQRS');
     }
 
     return { success: true, data: pqrs };
