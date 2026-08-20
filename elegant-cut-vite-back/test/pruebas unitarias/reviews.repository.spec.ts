@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReviewsRepository } from '../../src/modules/reviews/reviews.repository';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
-describe('ReviewsRepository', () => {
+describe('ReviewsRepository - Pruebas Unitarias', () => {
     let repo: ReviewsRepository;
     let prismaMock: any;
 
@@ -10,8 +10,10 @@ describe('ReviewsRepository', () => {
         prismaMock = {
             resenas: {
                 findMany: jest.fn().mockResolvedValue([
-                    { id_resena: 1, calificacion: 5 }
-                ])
+                    { id_resena: 1, calificacion: 5, estado: 1 }
+                ]),
+                update: jest.fn().mockResolvedValue({ id_resena: 1, estado: 0 }),
+                delete: jest.fn().mockResolvedValue({ id_resena: 1 }),
             }
         };
 
@@ -25,17 +27,38 @@ describe('ReviewsRepository', () => {
         repo = module.get<ReviewsRepository>(ReviewsRepository);
     });
 
-    it('should find all by barbero and correctly use Number.isNaN', async () => {
-        const result = await repo.findBarberReviews(1);
-        expect(result).toBeDefined();
-        expect(prismaMock.resenas.findMany).toHaveBeenCalled();
-        
-        // Probamos con string también
-        const resultString = await repo.findBarberReviews("1" as any);
-        expect(resultString).toBeDefined();
+    describe('Búsqueda de Reseñas', () => {
+        it('should find all by barbero and correctly use Number.isNaN', async () => {
+            const result = await repo.findBarberReviews(1);
+            expect(result).toBeDefined();
+            expect(prismaMock.resenas.findMany).toHaveBeenCalled();
+            
+            const resultString = await repo.findBarberReviews("1" as any);
+            expect(resultString).toBeDefined();
 
-        // Probamos con null
-        const resultNull = await repo.findBarberReviews(null as any);
-        expect(resultNull).toBeDefined();
+            const resultNull = await repo.findBarberReviews(null as any);
+            expect(resultNull).toBeDefined();
+        });
+    });
+
+    describe('RF-010: Moderación de Reseñas', () => {
+        it('Debe cambiar el estado de visibilidad de una reseña (ocultar = 0 / aprobar = 1)', async () => {
+            const result = await repo.changeStatusAdmin(1, 0);
+
+            expect(result.estado).toBe(0);
+            expect(prismaMock.resenas.update).toHaveBeenCalledWith({
+                where: { id_resena: 1 },
+                data: { estado: 0 }
+            });
+        });
+
+        it('Debe eliminar definitivamente una reseña inapropiada', async () => {
+            const result = await repo.deleteAdmin(1);
+
+            expect(prismaMock.resenas.delete).toHaveBeenCalledWith({
+                where: { id_resena: 1 }
+            });
+        });
     });
 });
+
