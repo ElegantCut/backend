@@ -6,13 +6,13 @@ export class PqrsRepository {
   constructor(private prisma: PrismaService) {}
 
   async create(data: any) {
-    const { tipo_solicitud, asunto, descripcion, id_usuario, estado } = data;
+    const { tipo_solicitud, asunto, descripcion, id_usuario } = data;
     const result = await this.prisma.pqrs.create({
       data: {
         tipo: tipo_solicitud || 'Peticion', // Valor por defecto del enum pqrs_tipo si no viene
         asunto,
         descripcion,
-        estado: estado || 'Pendiente', // Valor por defecto del enum pqrs_estado
+        estado: 'Pendiente', // Obligatorio según regla de negocio
         id_usuario,
       },
     });

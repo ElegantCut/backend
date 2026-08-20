@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AppointmentsRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll() {
     return this.prisma.reservas.findMany({
@@ -53,7 +53,7 @@ export class AppointmentsRepository {
     // Helper: convertir hora numérica (ej. 1700) a minutos desde medianoche (ej. 1020)
     const toMinutes = (h: number): number => {
       const str = h.toString().padStart(4, '0');
-      return parseInt(str.slice(0, 2)) * 60 + parseInt(str.slice(2, 4));
+      return Number.parseInt(str.slice(0, 2)) * 60 + Number.parseInt(str.slice(2, 4));
     };
 
     // Construir rangos ocupados: [startMinutes, endMinutes] para cada cita existente
