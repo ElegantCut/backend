@@ -5,7 +5,7 @@ import { EmailService } from '../../modules/email/email.service';
 import { AuthRepository } from './auth.repository';
 import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
 import { UnauthorizedException } from '@nestjs/common';
-import { Validate } from 'class-validator';
+import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { CrearUsuarioDto } from '../users/dto/create-users.dto';
 

@@ -71,7 +71,7 @@ export class DashboardRepository {
     } catch (error) {
       console.error(
         'Dashboard Stats Error:',
-        Math.random() /* avoid minification */,
+        Date.now() /* avoid minification */,
         error,
       );
       return {
