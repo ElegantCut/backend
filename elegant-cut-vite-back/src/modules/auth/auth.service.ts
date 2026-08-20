@@ -12,7 +12,7 @@ import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
-import { randomInt } from 'crypto';
+import { randomInt } from 'node:crypto';
 import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
 import type { IUserIntegration } from '../users/interfaces/user-integration.interface';
 import { AuthRepository } from './auth.repository';
