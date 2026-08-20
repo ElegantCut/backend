@@ -61,19 +61,19 @@ export class PqrsService {
     // Formato esperado: PQRS-{ID}-{AÑO}
     const parts = radicado.split('-');
     if (parts.length < 2 || parts[0].toUpperCase() !== 'PQRS') {
-      return { success: false, error: 'Formato de radicado inválido' };
+      throw new NotFoundException('Formato de radicado inválido');
     }
 
     // El ID es la segunda parte del radicado
     const id = Number.parseInt(parts[1], 10);
     if (Number.isNaN(id)) {
-      return { success: false, error: 'ID de radicado inválido' };
+      throw new NotFoundException('ID de radicado inválido');
     }
 
     const pqrs = await this.pqrsRepo.findByRadicado(id);
 
     if (!pqrs) {
-      return { success: false, error: 'No se encontró la PQRS' };
+      throw new NotFoundException('No se encontró la PQRS');
     }
 
     return { success: true, data: pqrs };
