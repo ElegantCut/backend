@@ -26,7 +26,7 @@ export class UploadsService {
           folder: 'elegant_cut', // Opcional: crea una carpeta en tu Cloudinary
         },
         (error, result) => {
-          if (error) return reject(error);
+          if (error) return reject(new Error(error.message || 'Error al subir a Cloudinary'));
           if (!result)
             return reject(
               new Error('Upload failed: no result from Cloudinary'),

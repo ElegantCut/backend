@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ReviewsRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAllApproved() {
     return this.prisma.resenas.findMany({
@@ -113,7 +113,7 @@ export class ReviewsRepository {
     return this.prisma.resenas.findMany({
       where: {
         id_barbero:
-          idBarbero && !isNaN(Number(idBarbero)) ? Number(idBarbero) : null,
+          idBarbero && !Number.isNaN(Number(idBarbero)) ? Number(idBarbero) : null,
         estado: 1,
       },
       include: {
