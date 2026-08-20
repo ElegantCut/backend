@@ -12,6 +12,16 @@ export class AppointmentsService {
   ) { }
 
   async getAvailability(date: string, barberId: number, serviceDuration?: number) {
+    const targetDate = new Date(date);
+    
+    // REGLA DE NEGOCIO (RF-007): Los Domingos (0) son días de descanso.
+    // Si se selecciona un día de descanso, el sistema debe retornar una lista vacía de slots.
+    // getDay() devuelve 0 para el Domingo en UTC. Como la fecha entra en formato YYYY-MM-DD,
+    // usamos getUTCDay() para evitar desfases de zona horaria.
+    if (targetDate.getUTCDay() === 0) {
+      return [];
+    }
+
     return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
   }
 
