@@ -1,0 +1,22 @@
+$kind: http-request
+url: https://apipruebas.minhacienda.gov.co:11443/siif/prg/consultarcatalogoinstitucional
+method: POST
+headers:
+  codPCI: 46-02-00-001
+  loginUsuarioSIIF: MHwsprueba
+  consecutivo: "3"
+  "": ""
+body:
+  type: json
+  content: "\r
+
+    {\"codAmbitoField\":\"SIIF\",\r
+
+    \"listaCodPCIField\":\"\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjYjAxZWJkZjJlYjg2NGEzODI4ZWFhNTk3Nzg1MTA1N2YxNmY3NGY3ODRkMjM2ZWQ2OGFhNmFhMGU0NzgzOWI2IiwibmJmIjoxNzU5NzY1NzM1LCJleHAiOjE3NTk3NjkzMzUsImlzcyI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyIsImF1ZCI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyJ9.bFxa4PixJP1cOlRm7fsgL8bppuEk5W-lKKqoWjtHE5U
+order: 12000

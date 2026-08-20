@@ -1,0 +1,43 @@
+$kind: http-request
+url: https://apipruebas.minhacienda.gov.co:11443/siif/api/epg/consultarejecucionagregada
+method: POST
+headers:
+  - key: codPCI
+    value: 13-01-01
+  - key: loginUsuarioSIIF
+    value: MHwsprueba
+  - key: consecutivo
+    value: "3"
+  - key: hash
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: "{\r
+
+    \  \"IdentificacionPCI\": \"13-01-01\",\r
+
+    \  \"NivelInstitucional\": \"Unidad\",\r
+
+    \  \"ValorInstitucional\": \"Todas\",\r
+
+    \  \"AnioFiscal\": 2025,\r
+
+    \  \"Mes\": 11,\r
+
+    \  \"TipoReporte\": 1,\r
+
+    \  \"Vigencia\": 1,\r
+
+    \  \"NivelNormativo\": 1,\r
+
+    \  \"PosicionGastos\": \"Todas\",\r
+
+    \  \"Usuario\": \"MHwsprueba\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1NTMyOTM5MWM5YTI1OWQ2ZTBmMDlkMWM0YmY1ZTc2NGZiNzA5MWEwYThkMTJmZjU4MDlkZmJlNDdlYTRkNmI3IiwibmJmIjoxNzYzNjU3MjAzLCJleHAiOjE3NjM2NjA4MDMsImlzcyI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyIsImF1ZCI6Imh0dHA6Ly9zaWlmbmFjaW9uLmdvdi5jbyJ9.4l2hMxHN6vwFiqVclDWhZFvjxrDMq6eSRE7t5JeVZ0w
+order: 11000
