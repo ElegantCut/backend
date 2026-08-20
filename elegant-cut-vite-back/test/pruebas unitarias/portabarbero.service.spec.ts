@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PortabarberoService } from './portabarbero.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PortabarberoService } from '../../src/modules/portabarbero/portabarbero.service';
+import { PortabarberoRepository } from '../../src/modules/portabarbero/portabarbero.repository';
 
 describe('PortabarberoService', () => {
   let service: PortabarberoService;
@@ -10,13 +10,14 @@ describe('PortabarberoService', () => {
       providers: [
         PortabarberoService,
         {
-          // Mock de PrismaService: evita conectar a BD real en pruebas unitarias
-          provide: PrismaService,
+          provide: PortabarberoRepository,
           useValue: {
-            portafolios: {
-              create: jest.fn(),
-              findFirst: jest.fn(),
-            },
+            create: jest.fn(),
+            findAll: jest.fn(),
+            findByUserId: jest.fn(),
+            update: jest.fn(),
+            findById: jest.fn(),
+            delete: jest.fn(),
           },
         },
       ],
