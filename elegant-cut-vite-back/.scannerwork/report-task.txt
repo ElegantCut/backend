@@ -2,5 +2,5 @@ projectKey=Elegant-Cut
 serverUrl=http://localhost:9000
 serverVersion=26.8.0.126808
 dashboardUrl=http://localhost:9000/dashboard?id=Elegant-Cut
-ceTaskId=c6d68dc0-98fc-4795-9705-d21b13ca20be
-ceTaskUrl=http://localhost:9000/api/ce/task?id=c6d68dc0-98fc-4795-9705-d21b13ca20be
+ceTaskId=16048bdb-b150-4113-8e0b-2cff2d145e6a
+ceTaskUrl=http://localhost:9000/api/ce/task?id=16048bdb-b150-4113-8e0b-2cff2d145e6a
