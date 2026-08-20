@@ -83,6 +83,17 @@ export class AppointmentsService {
     try {
       console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
 
+      // REGLA DE NEGOCIO: Validar el estado actual de la cita antes de cambiarlo
+      const citaActual = await this.appointmentsRepo.findUniqueWithDetails(id);
+      if (!citaActual) {
+        throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+      }
+
+      // Si se intenta Completar (2) o Cancelar (3), la cita debe estar obligatoriamente Pendiente (1)
+      if ((nuevoEstado === 2 || nuevoEstado === 3) && citaActual.id_estado_cita !== 1) {
+        throw new BadRequestException('Solo las citas en estado Pendiente pueden cambiar de estado');
+      }
+
       const updated = await this.appointmentsRepo.updateAppointmentStatus(
         id,
         nuevoEstado,
@@ -98,6 +109,9 @@ export class AppointmentsService {
         `[Admin Error] Falló actualización de cita ${id}:`,
         error.message,
       );
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
       return {
         success: false,
         message:
