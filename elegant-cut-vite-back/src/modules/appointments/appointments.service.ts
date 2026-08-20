@@ -9,7 +9,7 @@ export class AppointmentsService {
   constructor(
     private readonly appointmentsRepo: AppointmentsRepository,
     @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
-  ) {}
+  ) { }
 
   async getAvailability(date: string, barberId: number, serviceDuration?: number) {
     return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
@@ -137,7 +137,7 @@ export class AppointmentsService {
 
     // --- INTEGRACIÓN CON n8n ---
     try {
-      const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita';
+      const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL as string;
 
       const reservaAny = reserva as any;
       const datosAny = datos as any;
@@ -215,43 +215,43 @@ export class AppointmentsService {
 
   // --- MÉTODO PARA REPROGRAMAR CITA (CLIENTE) ---
   async rescheduleAppointment(id: number, data: { userId: number; fecha: string; id_horarios: number; id_empleado?: number }) {
-      const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-      if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
 
-      if (cita.id_usuario !== data.userId) {
-          throw new ForbiddenException('No puedes reprogramar una cita que no te pertenece');
-      }
+    if (cita.id_usuario !== data.userId) {
+      throw new ForbiddenException('No puedes reprogramar una cita que no te pertenece');
+    }
 
-      if (cita.id_estado_cita !== 1) {
-          throw new BadRequestException('Solo se pueden reprogramar citas en estado Pendiente');
-      }
+    if (cita.id_estado_cita !== 1) {
+      throw new BadRequestException('Solo se pueden reprogramar citas en estado Pendiente');
+    }
 
-      const updateData: any = {
-          fecha: new Date(data.fecha),
-          id_horarios: data.id_horarios,
-      };
+    const updateData: any = {
+      fecha: new Date(data.fecha),
+      id_horarios: data.id_horarios,
+    };
 
-      if (data.id_empleado) {
-          updateData.id_empleado = data.id_empleado;
-      }
+    if (data.id_empleado) {
+      updateData.id_empleado = data.id_empleado;
+    }
 
-      return this.appointmentsRepo.updateAppointment(id, updateData);
+    return this.appointmentsRepo.updateAppointment(id, updateData);
   }
 
   // --- MÉTODO PARA CANCELAR CITA (CLIENTE) ---
   async cancelAppointment(id: number, userId: number) {
-      const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-      if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
 
-      if (cita.id_usuario !== userId) {
-          throw new ForbiddenException('No puedes cancelar una cita que no te pertenece');
-      }
+    if (cita.id_usuario !== userId) {
+      throw new ForbiddenException('No puedes cancelar una cita que no te pertenece');
+    }
 
-      if (cita.id_estado_cita !== 1) {
-          throw new BadRequestException('Solo se pueden cancelar citas en estado Pendiente');
-      }
+    if (cita.id_estado_cita !== 1) {
+      throw new BadRequestException('Solo se pueden cancelar citas en estado Pendiente');
+    }
 
-      return this.appointmentsRepo.updateAppointment(id, { id_estado_cita: 3 });
+    return this.appointmentsRepo.updateAppointment(id, { id_estado_cita: 3 });
   }
 
   // --- MÉTODO PARA RECORDATORIOS (n8n) ---
