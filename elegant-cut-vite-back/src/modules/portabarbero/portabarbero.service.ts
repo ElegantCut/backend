@@ -14,7 +14,23 @@ export class PortabarberoService {
   }
 
   async crearPortafolio(data: any) {
-    return this.portafoliosRepo.create(data);
+    try {
+      const payload = {
+        ...data,
+        especialidades: Array.isArray(data.especialidades) ? JSON.stringify(data.especialidades) : data.especialidades,
+        fotos_portafolio: Array.isArray(data.fotos_portafolio) ? JSON.stringify(data.fotos_portafolio) : data.fotos_portafolio,
+      };
+
+      const existing = await this.portafoliosRepo.findByUserId(data.id_usuario);
+      if (existing) {
+        return await this.portafoliosRepo.update(existing.id_portafolio, payload);
+      }
+      return await this.portafoliosRepo.create(payload);
+    } catch (error) {
+      require('fs').writeFileSync('C:/Elegan-vite/Elegant-cut--flow-backend/elegant-cut-vite-back/error_dump.txt', String(error) + '\\n' + error.stack);
+      console.error(error);
+      throw new Error(error.message);
+    }
   }
 
   async updatePortafolio(id: number, data: any) {

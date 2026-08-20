@@ -11,8 +11,8 @@ export class AppointmentsService {
     @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
   ) {}
 
-  async getAvailability(date: string, barberId: number) {
-    return this.appointmentsRepo.getAvailableSlots(date, barberId);
+  async getAvailability(date: string, barberId: number, serviceDuration?: number) {
+    return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
   }
 
   async bookAppointment(data: any) {
@@ -102,8 +102,17 @@ export class AppointmentsService {
 
   async createAppointment(datos: CreateAppointmentDto) {
     const id_servicio = Number(datos.id_servicio);
+    const fechaReserva = new Date(datos.fecha);
+
+    // Validación de regla de negocio: no agendar en el pasado (RF-006)
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Inicio del día actual
+    if (fechaReserva < hoy) {
+      throw new BadRequestException('No puedes agendar citas en el pasado');
+    }
+
     const reservaData = {
-      fecha: new Date(datos.fecha),
+      fecha: fechaReserva,
       observaciones: datos.observaciones,
       id_usuario: Number(datos.id_usuario),
       id_empleado: Number(datos.id_empleado),
@@ -111,11 +120,20 @@ export class AppointmentsService {
       id_horarios: Number(datos.id_horarios),
     };
 
-    const reserva =
-      await this.appointmentsRepo.createAppointmentWithTransaction(
+    let reserva: any;
+    try {
+      reserva = await this.appointmentsRepo.createAppointmentWithTransaction(
         reservaData,
         id_servicio,
       );
+    } catch (error: any) {
+      if (error.message === 'HORARIO_OCUPADO') {
+        throw new BadRequestException(
+          'Este horario ya no está disponible para el barbero seleccionado. Por favor, elige otra hora.',
+        );
+      }
+      throw error;
+    }
 
     // --- INTEGRACIÓN CON n8n ---
     try {
