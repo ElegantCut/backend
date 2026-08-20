@@ -74,7 +74,7 @@ describe('PqrsService - Pruebas Unitarias', () => {
     });
   });
 
-  describe('Consulta de PQRS', () => {
+  describe('Consulta de PQRS (RF-016)', () => {
     it('Debe buscar PQRS por correo electrónico del usuario', async () => {
       mockRepo.findByUserData.mockResolvedValue([{ id_pqrs: 1 }]);
       
@@ -95,13 +95,8 @@ describe('PqrsService - Pruebas Unitarias', () => {
     });
 
     it('Debe arrojar error si el radicado tiene formato inválido', async () => {
-      const resultado1 = await service.findByRadicado('INVALIDO-25');
-      expect(resultado1.success).toBe(false);
-      expect(resultado1.error).toBe('Formato de radicado inválido');
-
-      const resultado2 = await service.findByRadicado('PQRS-ABC-2026');
-      expect(resultado2.success).toBe(false);
-      expect(resultado2.error).toBe('ID de radicado inválido');
+      await expect(service.findByRadicado('INVALIDO-25')).rejects.toThrow(NotFoundException);
+      await expect(service.findByRadicado('PQRS-ABC-2026')).rejects.toThrow(NotFoundException);
     });
   });
 
