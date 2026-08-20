@@ -8,7 +8,7 @@ export class PqrsService {
   constructor(
     private readonly pqrsRepo: PqrsRepository,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   async create(data: CrearPqrsDto) {
     // Guardar PQRS en DB
@@ -61,8 +61,8 @@ export class PqrsService {
     }
 
     // El ID es la segunda parte del radicado
-    const id = parseInt(parts[1], 10);
-    if (isNaN(id)) {
+    const id = Number.parseInt(parts[1], 10);
+    if (Number.isNaN(id)) {
       return { success: false, error: 'ID de radicado inválido' };
     }
 
