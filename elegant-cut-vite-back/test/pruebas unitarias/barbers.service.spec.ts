@@ -109,4 +109,21 @@ describe('BarbersService - Pruebas Unitarias', () => {
       expect(mockRepo.updateBarber).toHaveBeenCalledWith(2, { estado: false });
     });
   });
+
+  describe('mapBarberWithRating coverage', () => {
+    it('Debe calcular la calificacion promedio correctamente', async () => {
+      mockRepo.findOneWithDetails.mockResolvedValue({
+        id_usuario: 1,
+        username: 'test',
+        estado: true,
+        password_hash: '123',
+        resenas_recibidas: [{ calificacion: 4 }, { calificacion: 5 }],
+        portafolios: { calificacion: 0, rese_as_count: 0, fotos_portafolio: [] }
+      });
+
+      const result = await service.findOne(1);
+      expect(result.calificacion_promedio).toBe(4.5);
+    });
+  });
 });
+
