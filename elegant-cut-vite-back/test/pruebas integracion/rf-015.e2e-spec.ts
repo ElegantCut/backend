@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from './../src/app.module';
-import { PrismaService } from './../src/prisma/prisma.service';
-import { EmailService } from './../src/modules/email/email.service';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/prisma/prisma.service';
+import { EmailService } from '../../src/modules/email/email.service';
 import * as nodemailer from 'nodemailer';
 
 // Mockeamos nodemailer
