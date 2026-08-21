@@ -46,7 +46,17 @@ describe('RF-015: Notificaciones por Email y Colas (e2e)', () => {
 
   beforeEach(async () => {
     // Limpieza
+    await prisma.detalle_cita_servicio.deleteMany();
+    await prisma.pagos.deleteMany();
+    await prisma.reservas.deleteMany();
+    await prisma.resenas.deleteMany();
+    await prisma.barberos_servicios.deleteMany();
+    await prisma.portafolios.deleteMany();
+    await prisma.pqrs.deleteMany();
+    await prisma.notificaciones.deleteMany();
+    await prisma.codigos_verificacion.deleteMany();
     await prisma.cola_correos.deleteMany();
+    await prisma.usuarios.deleteMany();
     sendMailMock.mockClear();
   });
 
@@ -89,7 +99,7 @@ describe('RF-015: Notificaciones por Email y Colas (e2e)', () => {
     sendMailMock.mockResolvedValueOnce(true); // Simulamos que Nodemailer responde Ok
 
     // Act: Forzamos la ejecución de la tarea del Cron
-    await emailService.processEmailQueue();
+    await emailService.processEmailQueue(true);
 
     // Assert: Nodemailer debió ser llamado
     expect(sendMailMock).toHaveBeenCalledTimes(1);
@@ -118,7 +128,7 @@ describe('RF-015: Notificaciones por Email y Colas (e2e)', () => {
     sendMailMock.mockRejectedValueOnce(new Error('SMTP Connection Timeout'));
 
     // Act
-    await emailService.processEmailQueue();
+    await emailService.processEmailQueue(true);
 
     // Assert: Nodemailer debió ser llamado e intentar enviarlo
     expect(sendMailMock).toHaveBeenCalledTimes(1);

@@ -70,7 +70,9 @@ export class EmailService {
    * Ejecuta cada minuto buscando correos pendientes o fallidos con menos de 3 intentos.
    */
   @Cron(CronExpression.EVERY_MINUTE)
-  async processEmailQueue() {
+  async processEmailQueue(isTestCall = false) {
+    if (process.env.NODE_ENV === 'test' && !isTestCall) return;
+    
     const pendientes = await this.prisma.cola_correos.findMany({
       where: {
         estado: { in: ['Pendiente', 'Fallido'] },
