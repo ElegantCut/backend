@@ -111,10 +111,11 @@ export class UsersController {
   ) {
     // SEGURIDAD CRÍTICA: Prevenir Escalamiento de Privilegios
     // Eliminamos del DTO cualquier campo protegido antes de enviarlo al Service
-    delete updateUsuarioDto.id_rol;
-    delete updateUsuarioDto.id_usuario;
-    delete updateUsuarioDto.estado;
-    delete updateUsuarioDto.password_hash;
+    const dtoAsAny = updateUsuarioDto as any;
+    delete dtoAsAny.id_rol;
+    delete dtoAsAny.id_usuario;
+    delete dtoAsAny.estado;
+    delete dtoAsAny.password_hash;
 
     return this.usersService.update(req.user.id_usuario, updateUsuarioDto);
   }

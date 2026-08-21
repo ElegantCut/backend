@@ -34,8 +34,16 @@ describe('RF-016: Consulta de Estado de PQRS (e2e)', () => {
 
   beforeEach(async () => {
     // Limpieza
-    await prisma.cola_correos.deleteMany();
+    await prisma.detalle_cita_servicio.deleteMany();
+    await prisma.pagos.deleteMany();
+    await prisma.reservas.deleteMany();
+    await prisma.resenas.deleteMany();
+    await prisma.barberos_servicios.deleteMany();
+    await prisma.portafolios.deleteMany();
     await prisma.pqrs.deleteMany();
+    await prisma.notificaciones.deleteMany();
+    await prisma.codigos_verificacion.deleteMany();
+    await prisma.cola_correos.deleteMany();
     await prisma.usuarios.deleteMany();
     
     // Configuración Base

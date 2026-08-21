@@ -33,7 +33,16 @@ describe('RF-002: Recuperación de Contraseña (e2e)', () => {
 
   beforeEach(async () => {
     // LIMPIEZA DE BD (Orden de eliminación inverso a las dependencias)
+    await prisma.detalle_cita_servicio.deleteMany();
+    await prisma.pagos.deleteMany();
+    await prisma.reservas.deleteMany();
+    await prisma.resenas.deleteMany();
+    await prisma.barberos_servicios.deleteMany();
+    await prisma.portafolios.deleteMany();
+    await prisma.pqrs.deleteMany();
+    await prisma.notificaciones.deleteMany();
     await prisma.codigos_verificacion.deleteMany();
+    await prisma.cola_correos.deleteMany();
     await prisma.usuarios.deleteMany();
     
     // SETUP: Asegurarnos de que existe el Rol 1

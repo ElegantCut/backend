@@ -190,20 +190,22 @@ export class AppointmentsService {
 
       console.log('PAYLOAD PARA N8N:', payload);
 
-      fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const text = await response.text();
-            console.warn(`n8n respondió con error ${response.status}:`, text);
-          } else {
-            console.log('🚀 Evento de cita enviado a n8n exitosamente');
-          }
+      if (process.env.NODE_ENV !== 'test') {
+        fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         })
-        .catch((err) => console.error('Error de red enviando a n8n:', err));
+          .then(async (response) => {
+            if (!response.ok) {
+              const text = await response.text();
+              console.warn(`n8n respondió con error ${response.status}:`, text);
+            } else {
+              console.log('🚀 Evento de cita enviado a n8n exitosamente');
+            }
+          })
+          .catch((err) => console.error('Error de red enviando a n8n:', err));
+      }
     } catch (error) {
       console.warn('No se pudo enviar a n8n:', error);
     }
@@ -260,6 +262,9 @@ export class AppointmentsService {
 
       // REGLA DE NEGOCIO: Disponibilidad y cruce de horarios
       const idEmpleado = data.id_empleado || cita.id_empleado;
+      if (!idEmpleado) {
+          throw new BadRequestException('Empleado no asignado a esta cita');
+      }
       const slotsDisponibles = await this.appointmentsRepo.getAvailableSlots(data.fecha, idEmpleado);
       const slotSeleccionado = slotsDisponibles.find(s => s.id === data.id_horarios);
 
