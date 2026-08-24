@@ -10,7 +10,10 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "modulkeNameMapper": {
+  "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1"
-  }
+  },
+  "globalSetup": "<rootDir>/global-setup.ts",
+  "globalTeardown": "<rootDir>/global-teardown.ts",
+  "setupFiles": ["<rootDir>/setup-env.ts"]
 }

@@ -109,6 +109,14 @@ export class UsersController {
     @Request() req,
     @Body() updateUsuarioDto: UpdateUsuarioDto,
   ) {
+    // SEGURIDAD CRÍTICA: Prevenir Escalamiento de Privilegios
+    // Eliminamos del DTO cualquier campo protegido antes de enviarlo al Service
+    const dtoAsAny = updateUsuarioDto as any;
+    delete dtoAsAny.id_rol;
+    delete dtoAsAny.id_usuario;
+    delete dtoAsAny.estado;
+    delete dtoAsAny.password_hash;
+
     return this.usersService.update(req.user.id_usuario, updateUsuarioDto);
   }
 

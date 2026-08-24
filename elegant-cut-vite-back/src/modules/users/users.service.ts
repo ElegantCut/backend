@@ -156,6 +156,12 @@ export class UsersService implements IUserIntegration {
 
     if (!usuario)
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+      
+    // SEGURIDAD: Nunca devolver el hash de la contraseña en las consultas
+    if (usuario.password_hash) {
+      delete (usuario as any).password_hash;
+    }
+
     return usuario;
   }
 

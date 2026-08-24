@@ -17,7 +17,8 @@ describe('UsersService - Pruebas Unitarias', () => {
       findById: jest.fn(),
       updateUser: jest.fn(),
       updateStatus: jest.fn(),
-      remove: jest.fn(), // We are mocking the methods
+      remove: jest.fn(),
+      getUserBasicInfo: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -35,6 +36,28 @@ describe('UsersService - Pruebas Unitarias', () => {
 
   it('El servicio de Usuarios debe estar definido', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('RF-014: Perfil de Usuario', () => {
+    it('Debe consultar la información básica del perfil del usuario (getUserBasicInfo)', async () => {
+      const usuarioSimulado = { id_usuario: 5, prim_nombre: 'Juan', apellido1: 'Perez', email: 'juan@test.com' };
+      mockRepo.getUserBasicInfo.mockResolvedValue(usuarioSimulado);
+
+      const resultado = await service.getUserBasicInfo(5);
+
+      expect(resultado).toEqual(usuarioSimulado);
+      expect(mockRepo.getUserBasicInfo).toHaveBeenCalledWith(5);
+    });
+
+    it('Debe actualizar los datos de perfil del cliente', async () => {
+      mockRepo.findById.mockResolvedValue({ id_usuario: 5, prim_nombre: 'Juan' });
+      mockRepo.updateUser.mockResolvedValue({ id_usuario: 5, prim_nombre: 'Juan Carlos', telefono: '3009998877' });
+
+      const resultado = await service.update(5, { prim_nombre: 'Juan Carlos', telefono: '3009998877' } as any);
+
+      expect(resultado.prim_nombre).toBe('Juan Carlos');
+      expect(mockRepo.updateUser).toHaveBeenCalledWith(5, expect.objectContaining({ prim_nombre: 'Juan Carlos' }));
+    });
   });
 
   describe('RF-019: Crear Administrador', () => {
@@ -126,3 +149,4 @@ describe('UsersService - Pruebas Unitarias', () => {
     });
   });
 });
+

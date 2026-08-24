@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AppointmentsRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll() {
     return this.prisma.reservas.findMany({
@@ -53,7 +53,7 @@ export class AppointmentsRepository {
     // Helper: convertir hora numérica (ej. 1700) a minutos desde medianoche (ej. 1020)
     const toMinutes = (h: number): number => {
       const str = h.toString().padStart(4, '0');
-      return parseInt(str.slice(0, 2)) * 60 + parseInt(str.slice(2, 4));
+      return Number.parseInt(str.slice(0, 2)) * 60 + Number.parseInt(str.slice(2, 4));
     };
 
     // Construir rangos ocupados: [startMinutes, endMinutes] para cada cita existente
@@ -128,11 +128,24 @@ export class AppointmentsRepository {
     });
   }
 
-  async findAppointmentsByBarber(barberId: number) {
+  async findAppointmentsByBarber(barberId: number, date?: string) {
+    const whereClause: any = {
+      id_empleado: barberId,
+    };
+
+    if (date) {
+      const targetDate = new Date(date);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      whereClause.fecha = {
+        gte: targetDate,
+        lt: nextDay,
+      };
+    }
+
     return this.prisma.reservas.findMany({
-      where: {
-        id_empleado: barberId,
-      },
+      where: whereClause,
       include: {
         usuarios: true,
         horarios: true,

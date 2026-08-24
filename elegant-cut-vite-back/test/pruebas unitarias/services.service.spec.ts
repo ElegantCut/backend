@@ -41,7 +41,6 @@ describe('ServicesService - Pruebas Unitarias', () => {
         precio: 25000,
         duracion: 30,
         id_categoria: 1,
-        generos: [1] // 1: Caballero
       };
 
       mockRepo.crearServicio.mockResolvedValue({ id_servicio: 10, ...dto });
@@ -120,6 +119,7 @@ describe('ServicesService - Pruebas Unitarias', () => {
     });
 
     it('Debe atrapar el error y retornar success: false si hay conflicto de llaves foráneas', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       mockRepo.findById.mockResolvedValue({ id_servicio: 1 });
       mockRepo.remove.mockRejectedValue(new Error('Foreign key constraint')); // Simula error de BD
 
@@ -127,6 +127,7 @@ describe('ServicesService - Pruebas Unitarias', () => {
 
       expect(resultado.success).toBe(false);
       expect(resultado.message).toContain('dependencias');
+      consoleSpy.mockRestore();
     });
   });
 });

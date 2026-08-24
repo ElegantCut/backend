@@ -9,9 +9,19 @@ export class AppointmentsService {
   constructor(
     private readonly appointmentsRepo: AppointmentsRepository,
     @Inject(USER_INTEGRATION_SERVICE) private readonly usersService: IUserIntegration,
-  ) {}
+  ) { }
 
   async getAvailability(date: string, barberId: number, serviceDuration?: number) {
+    const targetDate = new Date(date);
+    
+    // REGLA DE NEGOCIO (RF-007): Los Domingos (0) son días de descanso.
+    // Si se selecciona un día de descanso, el sistema debe retornar una lista vacía de slots.
+    // getDay() devuelve 0 para el Domingo en UTC. Como la fecha entra en formato YYYY-MM-DD,
+    // usamos getUTCDay() para evitar desfases de zona horaria.
+    if (targetDate.getUTCDay() === 0) {
+      return [];
+    }
+
     return this.appointmentsRepo.getAvailableSlots(date, barberId, serviceDuration);
   }
 
@@ -73,6 +83,17 @@ export class AppointmentsService {
     try {
       console.log(`[Admin] Actualizando cita ${id} a estado ${nuevoEstado}`);
 
+      // REGLA DE NEGOCIO: Validar el estado actual de la cita antes de cambiarlo
+      const citaActual = await this.appointmentsRepo.findUniqueWithDetails(id);
+      if (!citaActual) {
+        throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+      }
+
+      // Si se intenta Completar (2) o Cancelar (3), la cita debe estar obligatoriamente Pendiente (1)
+      if ((nuevoEstado === 2 || nuevoEstado === 3) && citaActual.id_estado_cita !== 1) {
+        throw new BadRequestException('Solo las citas en estado Pendiente pueden cambiar de estado');
+      }
+
       const updated = await this.appointmentsRepo.updateAppointmentStatus(
         id,
         nuevoEstado,
@@ -88,6 +109,9 @@ export class AppointmentsService {
         `[Admin Error] Falló actualización de cita ${id}:`,
         error.message,
       );
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
       return {
         success: false,
         message:
@@ -96,8 +120,8 @@ export class AppointmentsService {
     }
   }
 
-  async getAppointmentsByBarber(barberId: number) {
-    return await this.appointmentsRepo.findAppointmentsByBarber(barberId);
+  async getAppointmentsByBarber(barberId: number, date?: string) {
+    return await this.appointmentsRepo.findAppointmentsByBarber(barberId, date);
   }
 
   async createAppointment(datos: CreateAppointmentDto) {
@@ -137,7 +161,7 @@ export class AppointmentsService {
 
     // --- INTEGRACIÓN CON n8n ---
     try {
-      const n8nWebhookUrl = 'http://elegant_n8n:5678/webhook/nueva-cita';
+      const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL as string;
 
       const reservaAny = reserva as any;
       const datosAny = datos as any;
@@ -166,20 +190,22 @@ export class AppointmentsService {
 
       console.log('PAYLOAD PARA N8N:', payload);
 
-      fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const text = await response.text();
-            console.warn(`n8n respondió con error ${response.status}:`, text);
-          } else {
-            console.log('🚀 Evento de cita enviado a n8n exitosamente');
-          }
+      if (process.env.NODE_ENV !== 'test') {
+        fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         })
-        .catch((err) => console.error('Error de red enviando a n8n:', err));
+          .then(async (response) => {
+            if (!response.ok) {
+              const text = await response.text();
+              console.warn(`n8n respondió con error ${response.status}:`, text);
+            } else {
+              console.log('🚀 Evento de cita enviado a n8n exitosamente');
+            }
+          })
+          .catch((err) => console.error('Error de red enviando a n8n:', err));
+      }
     } catch (error) {
       console.warn('No se pudo enviar a n8n:', error);
     }
@@ -215,43 +241,75 @@ export class AppointmentsService {
 
   // --- MÉTODO PARA REPROGRAMAR CITA (CLIENTE) ---
   async rescheduleAppointment(id: number, data: { userId: number; fecha: string; id_horarios: number; id_empleado?: number }) {
-      const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-      if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
 
-      if (cita.id_usuario !== data.userId) {
-          throw new ForbiddenException('No puedes reprogramar una cita que no te pertenece');
+    if (cita.id_usuario !== data.userId) {
+      throw new ForbiddenException('No puedes reprogramar una cita que no te pertenece');
+    }
+
+    if (cita.id_estado_cita !== 1) {
+      throw new BadRequestException('Solo se pueden reprogramar citas en estado Pendiente');
+    }
+
+      // REGLA DE NEGOCIO: Fechas pasadas
+      const nuevaFecha = new Date(data.fecha);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (nuevaFecha < hoy) {
+          throw new BadRequestException('No se pueden reprogramar citas en fechas pasadas');
       }
 
-      if (cita.id_estado_cita !== 1) {
-          throw new BadRequestException('Solo se pueden reprogramar citas en estado Pendiente');
+      // REGLA DE NEGOCIO: Disponibilidad y cruce de horarios
+      const idEmpleado = data.id_empleado || cita.id_empleado;
+      if (!idEmpleado) {
+          throw new BadRequestException('Empleado no asignado a esta cita');
+      }
+      const slotsDisponibles = await this.appointmentsRepo.getAvailableSlots(data.fecha, idEmpleado);
+      const slotSeleccionado = slotsDisponibles.find(s => s.id === data.id_horarios);
+
+      if (!slotSeleccionado) {
+          throw new BadRequestException('El horario seleccionado no existe');
+      }
+
+      const cambiaFecha = nuevaFecha.toISOString().split('T')[0] !== cita.fecha.toISOString().split('T')[0];
+      const cambiaEmpleado = idEmpleado !== cita.id_empleado;
+      const cambiaHorario = data.id_horarios !== cita.id_horarios;
+
+      if (!slotSeleccionado.isAvailable) {
+          // Si el slot está ocupado, verificamos si es por esta misma cita o por otra.
+          // Si el usuario intentó cambiar a una hora/fecha/empleado distinto y el slot está ocupado, denegamos.
+          if (cambiaFecha || cambiaEmpleado || cambiaHorario) {
+              throw new BadRequestException('El horario seleccionado ya no está disponible');
+          }
       }
 
       const updateData: any = {
-          fecha: new Date(data.fecha),
+          fecha: nuevaFecha,
           id_horarios: data.id_horarios,
       };
 
-      if (data.id_empleado) {
-          updateData.id_empleado = data.id_empleado;
-      }
+    if (data.id_empleado) {
+      updateData.id_empleado = data.id_empleado;
+    }
 
-      return this.appointmentsRepo.updateAppointment(id, updateData);
+    return this.appointmentsRepo.updateAppointment(id, updateData);
   }
 
   // --- MÉTODO PARA CANCELAR CITA (CLIENTE) ---
   async cancelAppointment(id: number, userId: number) {
-      const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
-      if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
+    const cita = await this.appointmentsRepo.findUniqueWithDetails(id);
+    if (!cita) throw new NotFoundException(`Cita con ID ${id} no encontrada`);
 
-      if (cita.id_usuario !== userId) {
-          throw new ForbiddenException('No puedes cancelar una cita que no te pertenece');
-      }
+    if (cita.id_usuario !== userId) {
+      throw new ForbiddenException('No puedes cancelar una cita que no te pertenece');
+    }
 
-      if (cita.id_estado_cita !== 1) {
-          throw new BadRequestException('Solo se pueden cancelar citas en estado Pendiente');
-      }
+    if (cita.id_estado_cita !== 1) {
+      throw new BadRequestException('Solo se pueden cancelar citas en estado Pendiente');
+    }
 
-      return this.appointmentsRepo.updateAppointment(id, { id_estado_cita: 3 });
+    return this.appointmentsRepo.updateAppointment(id, { id_estado_cita: 3 });
   }
 
   // --- MÉTODO PARA RECORDATORIOS (n8n) ---

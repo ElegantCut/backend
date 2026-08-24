@@ -233,3 +233,15 @@ model notificaciones {
 
   @@index([id_usuario], map: "fk_usuario_notificacion")
 }
+
+model cola_correos {
+  id_cola       Int       @id @default(autoincrement())
+  destinatario  String    @db.VarChar(100)
+  asunto        String    @db.VarChar(150)
+  cuerpo_html   String    @db.Text
+  estado        String    @default("Pendiente") @db.VarChar(20)
+  intentos      Int       @default(0)
+  error_ultimo  String?   @db.Text
+  fecha_creado  DateTime  @default(now()) @db.DateTime(0)
+  fecha_intento DateTime? @db.DateTime(0)
+}

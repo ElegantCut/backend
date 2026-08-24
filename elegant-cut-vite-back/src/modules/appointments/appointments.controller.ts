@@ -77,9 +77,10 @@ export class AppointmentsController {
     description: 'ID del empleado/barbero',
     example: '2',
   })
+  @ApiQuery({ name: 'date', description: 'Fecha opcional (YYYY-MM-DD)', required: false })
   @Get('barber/:id')
-  async getByBarber(@Param('id') id: string) {
-    return this.appointmentsService.getAppointmentsByBarber(+id);
+  async getByBarber(@Param('id') id: string, @Query('date') date?: string) {
+    return this.appointmentsService.getAppointmentsByBarber(+id, date);
   }
 
   @ApiBearerAuth()

@@ -12,6 +12,7 @@ import { ResetPasswordDto } from './dto/reset-passwors.dto';
 import { codigos_verificacion_tipo } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
+import { randomInt } from 'node:crypto';
 import { USER_INTEGRATION_SERVICE } from '../users/interfaces/user-integration.interface';
 import type { IUserIntegration } from '../users/interfaces/user-integration.interface';
 import { AuthRepository } from './auth.repository';
@@ -149,9 +150,7 @@ export class AuthService {
       throw new BadRequestException('Email no registrado');
     }
 
-    const codigoSecreto = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
+    const codigoSecreto = randomInt(100000, 1000000).toString();
 
     const fechaExpiracion = new Date();
     fechaExpiracion.setMinutes(fechaExpiracion.getMinutes() + 15);
@@ -202,7 +201,7 @@ export class AuthService {
             foto_perfil: picture,
             username:
               (email || 'user').split('@')[0] +
-              Math.floor(Math.random() * 1000),
+              randomInt(0, 1000),
         });
       } else if (!user.google_id) {
         // Si existía por email pero no tenía google_id, lo vinculamos
@@ -264,7 +263,7 @@ export class AuthService {
             id_rol: 2, // Rol cliente
             estado: true,
             foto_perfil: picture,
-            username: (email || 'user').split('@')[0] + Math.floor(Math.random() * 1000),
+            username: (email || 'user').split('@')[0] + randomInt(0, 1000),
         });
       }
 

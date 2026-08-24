@@ -6,31 +6,31 @@ import { buildCloudinaryUrl, parseCloudinaryPhotos } from '../../common/helpers/
 
 @Injectable()
 export class BarbersService {
-  constructor(private readonly barbersRepo: BarbersRepository) {}
+    constructor(private readonly barbersRepo: BarbersRepository) { }
 
-  async getAllBarbers() {
-    try {
-      const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
-      const mappedData = data.map((barber) => this.mapBarberWithRating(barber));
-      return { success: true, data: mappedData };
-    } catch (error) {
-      return { success: false, data: [] };
+    async getAllBarbers() {
+        try {
+            const data = await this.barbersRepo.findAllWithPortfolioAndReviews(true);
+            const mappedData = data.map((barber) => this.mapBarberWithRating(barber));
+            return { success: true, data: mappedData };
+        } catch (error) {
+            return { success: false, data: [] };
+        }
     }
-  }
 
-  async getPublicBarbers() {
-    const barbers = await this.barbersRepo.findActive();
-    return barbers.map((barber) => this.mapBarberWithRating(barber));
-  }
+    async getPublicBarbers() {
+        const barbers = await this.barbersRepo.findActive();
+        return barbers.map((barber) => this.mapBarberWithRating(barber));
+    }
 
-  async getBarberStats(id: number) {
-    return this.barbersRepo.getStats(id);
-  }
+    async getBarberStats(id: number) {
+        return this.barbersRepo.getStats(id);
+    }
 
-  async obtenerBarberos() {
-    const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
-    return data.map((barber) => this.mapBarberWithRating(barber));
-  }
+    async obtenerBarberos() {
+        const data = await this.barbersRepo.findAllWithPortfolioAndReviews(false);
+        return data.map((barber) => this.mapBarberWithRating(barber));
+    }
 
     async crearBarbero(createBarberDto: CreateBarberDto) {
         // Encriptar la contraseña antes de guardarla
@@ -63,7 +63,7 @@ export class BarbersService {
     async findOne(id: number) {
         const barbero = await this.barbersRepo.findOneWithDetails(id);
         if (!barbero) throw new NotFoundException(`Barbero con ID ${id} no encontrado`);
-        
+
         const mappedBarber = this.mapBarberWithRating(barbero);
         const { password_hash, ...result } = mappedBarber;
         return result;
@@ -71,7 +71,7 @@ export class BarbersService {
 
     async update(id: number, data: any) {
         await this.findOne(id); // Verifica si existe
-        
+
         if (data.password_hash) {
             const salt = await bcrypt.genSalt(10);
             data.password_hash = await bcrypt.hash(data.password_hash, salt);
@@ -110,7 +110,7 @@ export class BarbersService {
     async toggleStatus(id: number) {
         const barbero = await this.findOne(id);
         const newStatus = !barbero.estado;
-        
+
         await this.barbersRepo.updateBarber(id, { estado: newStatus });
 
         return { success: true, newStatus };
@@ -118,7 +118,7 @@ export class BarbersService {
 
     async remove(id: number) {
         await this.findOne(id); // Verifica si existe
-        
+
         // Soft delete
         return await this.barbersRepo.updateBarber(id, { estado: false });
     }
@@ -129,7 +129,7 @@ export class BarbersService {
         const sum = resenas.reduce((acc: number, r: any) => acc + r.calificacion, 0);
         const avg = count > 0 ? (sum / count).toFixed(1) : "5.0";
 
-        barber.calificacion_promedio = parseFloat(avg as string);
+        barber.calificacion_promedio = Number.parseFloat(avg as string);
         barber.total_resenas = count;
 
         // Mapear foto de perfil a URL completa de Cloudinary
@@ -137,7 +137,7 @@ export class BarbersService {
 
         const portfolio = Array.isArray(barber.portafolios) ? barber.portafolios[0] : barber.portafolios;
         if (portfolio) {
-            portfolio.calificacion = parseFloat(avg as string);
+            portfolio.calificacion = Number.parseFloat(avg as string);
             portfolio.rese_as_count = count;
 
             // Parsear fotos del portafolio a URLs completas de Cloudinary
