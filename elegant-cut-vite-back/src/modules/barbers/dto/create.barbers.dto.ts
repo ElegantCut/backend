@@ -21,7 +21,7 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
   seg_nombre?: string;
 
   @ApiProperty({
@@ -39,7 +39,7 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
   apellido2?: string;
 
   @ApiProperty({
