@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, UseGuards, Res, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -49,8 +49,11 @@ export class DashboardController {
       'Devuelve métricas como total de barberos, usuarios, citas, etc. para el dashboard.',
   })
   @Get('stats')
-  async getStats() {
-    return this.dashboardService.getStats();
+  async getStats(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.dashboardService.getStats(startDate, endDate);
   }
 
   @ApiBearerAuth()

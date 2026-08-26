@@ -7,8 +7,8 @@ const PDFDocument = require('pdfkit');
 export class DashboardService {
   constructor(private readonly dashboardRepo: DashboardRepository) {}
 
-  async getStats() {
-    return this.dashboardRepo.getSummaryStats();
+  async getStats(startDate?: string, endDate?: string) {
+    return this.dashboardRepo.getSummaryStats(startDate, endDate);
   }
 
   async getActivity() {
