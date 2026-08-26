@@ -16,9 +16,19 @@ export class BarbersRepository {
     });
   }
 
-  async findActive() {
+  async findActive(especialidad?: string) {
+    const whereCondition: any = { id_rol: 3, estado: true };
+
+    if (especialidad) {
+      whereCondition.portafolios = {
+        especialidades: {
+          contains: especialidad,
+        },
+      };
+    }
+
     return (this.prisma.usuarios as any).findMany({
-      where: { id_rol: 3, estado: true },
+      where: whereCondition,
       include: {
         portafolios: true,
         resenas_recibidas: {
@@ -42,6 +52,12 @@ export class BarbersRepository {
       where: { id_estado_cita: 2 },
     });
     return { total_citas: total, citas_completadas: completadas };
+  }
+
+  async findByEmail(email: string) {
+    return this.prisma.usuarios.findFirst({
+      where: { email },
+    });
   }
 
   // --- NUEVOS MÉTODOS DE REPOSITORIO PARA CUMPLIR CON SOLID ---

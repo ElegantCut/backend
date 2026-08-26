@@ -5,17 +5,27 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class DashboardRepository {
   constructor(private prisma: PrismaService) { }
 
-  async getSummaryStats() {
+  async getSummaryStats(startDateStr?: string, endDateStr?: string) {
     try {
-      // Forzar que el cálculo de fecha sea con respecto a la zona horaria de Colombia (UTC-5)
-      const now = new Date();
-      const cotNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+      let startDate: Date;
+      let endDate: Date;
 
-      const cotStart = new Date(cotNow);
-      cotStart.setUTCHours(0, 0, 0, 0);
+      if (startDateStr && endDateStr) {
+        startDate = new Date(startDateStr);
+        endDate = new Date(endDateStr);
+      } else {
+        // Forzar que el cálculo de fecha sea con respecto a la zona horaria de Colombia (UTC-5)
+        const now = new Date();
+        const cotNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
 
-      const today = new Date(cotStart.getTime() + 5 * 60 * 60 * 1000);
-      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+        const cotStart = new Date(cotNow);
+        cotStart.setUTCHours(0, 0, 0, 0);
+
+        startDate = new Date(cotStart.getTime() + 5 * 60 * 60 * 1000);
+        endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      }
+
+      const dateFilter = { gte: startDate, lt: endDate };
 
       const [
         citasHoyCount,
@@ -26,18 +36,18 @@ export class DashboardRepository {
         reservasCompletadasHoy,
       ] = await Promise.all([
         this.prisma.reservas.count({
-          where: { fecha: { gte: today, lt: tomorrow } },
+          where: { fecha: dateFilter },
         }),
-        this.prisma.reservas.count({ where: { id_estado_cita: 1 } }),
-        this.prisma.reservas.count({ where: { id_estado_cita: 2 } }),
-        this.prisma.reservas.count({ where: { id_estado_cita: 3 } }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 1, fecha: dateFilter } }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 2, fecha: dateFilter } }),
+        this.prisma.reservas.count({ where: { id_estado_cita: 3, fecha: dateFilter } }),
         this.prisma.usuarios.count({
-          where: { id_rol: 2, created_at: { gte: today, lt: tomorrow } },
+          where: { id_rol: 2, created_at: dateFilter },
         }),
         this.prisma.reservas.findMany({
           where: {
             id_estado_cita: 2, // Completada
-            fecha: { gte: today, lt: tomorrow },
+            fecha: dateFilter,
           },
           include: {
             detalle_cita_servicio: {
