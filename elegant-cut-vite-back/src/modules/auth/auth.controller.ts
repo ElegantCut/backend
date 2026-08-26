@@ -98,6 +98,34 @@ export class AuthController {
     // Retornamos el resultado completo incluyendo el token al igual que el login normal
     return result;
   }
+
+  @ApiOperation({ summary: 'Iniciar sesión con Google (Redirección)' })
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Request() req) {
+    // Inicia el flujo de autenticación de Google
+  }
+
+  @ApiOperation({ summary: 'Callback de Google' })
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(
+    @Request() req,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const result = await this.authService.googleLoginServerSide(req.user);
+    res.cookie('jwt', result.token, {
+      httpOnly: true,
+      secure: false, // Debe ser false para localhost
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    // Redirigir al frontend
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/`);
+  }
+
   //creamos el nuevo método put
 
   @ApiOperation({ summary: 'Restablecer Contraseña' })
