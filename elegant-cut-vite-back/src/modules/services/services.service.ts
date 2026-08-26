@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ServicesRepository } from './services.repository';
 import { CrearServicioDto } from './dto/create-servicio.dto';
 import { buildCloudinaryUrl } from '../../common/helpers/cloudinary-url.helper';
@@ -87,10 +87,7 @@ export class ServicesService {
       return { success: true };
     } catch (error) {
       console.error(error);
-      return {
-        success: false,
-        message: 'No se pudo eliminar el servicio porque tiene dependencias.',
-      };
+      throw new BadRequestException('No se pudo eliminar el servicio porque tiene dependencias.');
     }
   }
 }
