@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { BarbersRepository } from './barbers.repository';
 import * as bcrypt from 'bcryptjs';
 import { CreateBarberDto } from './dto/create.barbers.dto';
@@ -18,8 +18,8 @@ export class BarbersService {
         }
     }
 
-    async getPublicBarbers() {
-        const barbers = await this.barbersRepo.findActive();
+    async getPublicBarbers(especialidad?: string) {
+        const barbers = await this.barbersRepo.findActive(especialidad);
         return barbers.map((barber) => this.mapBarberWithRating(barber));
     }
 
@@ -33,6 +33,12 @@ export class BarbersService {
     }
 
     async crearBarbero(createBarberDto: CreateBarberDto) {
+        // Validar que el correo no esté duplicado
+        const existingUser = await this.barbersRepo.findByEmail(createBarberDto.email);
+        if (existingUser) {
+            throw new BadRequestException('El correo electrónico ya se encuentra registrado');
+        }
+
         // Encriptar la contraseña antes de guardarla
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(createBarberDto.password_hash, salt);

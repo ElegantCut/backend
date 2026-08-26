@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
   Max,
+  ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -60,6 +61,7 @@ export class CreatePortaDto {
     example: ['https://url.com/foto1.jpg'],
   })
   @IsArray() // Es JSON en SQL, lo recibimos como Array
-  @IsOptional()
-  fotos_portafolio?: string[];
+  @ArrayMinSize(1, { message: 'Debe subir al menos una foto para su portafolio' })
+  @IsNotEmpty({ message: 'El portafolio de fotos es obligatorio' })
+  fotos_portafolio: string[];
 }
