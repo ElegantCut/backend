@@ -9,6 +9,9 @@ import {
   Request,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +20,9 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { CrearUsuarioDto } from './dto/create-users.dto';
 import { UpdateUsuarioDto } from './dto/update-users.dto';
@@ -64,12 +69,48 @@ export class UsersController {
     return this.usersService.crearUsuario(crearUsuarioDto);
   }
 
+  // --- ENDPOINT PARA SUBIR FOTO DE PERFIL (CUALQUIER USUARIO AUTENTICADO) ---
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Subir foto de perfil',
+    description:
+      'Permite al usuario autenticado subir su foto de perfil. El archivo se sube a Cloudinary y se guarda el ID en la base de datos.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Foto de perfil actualizada exitosamente.' })
+  @Post('profile-photo')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadProfilePhoto(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No se ha enviado ninguna imagen.');
+    }
+
+    const userId = req.user.id_usuario;
+    return this.usersService.uploadAndUpdatePhoto(userId, file);
+  }
+
   // hacemos el patch update
   @ApiBearerAuth()
   @Roles(1) // Solo Admin
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({
-    summary: 'Actualizar foto de perfil',
+    summary: 'Actualizar foto de perfil (Admin)',
     description:
       'Actualiza o asigna la foto de perfil en Cloudinary a un usuario específico por su ID.',
   })
