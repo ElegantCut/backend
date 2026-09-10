@@ -11,4 +11,5 @@ export interface IUserIntegration {
     vincularGoogleId(id_usuario: number, google_id: string): Promise<any>;
     crearUsuarioConGoogle(data: any): Promise<any>;
     updatePasswordByEmail(email: string, hash: string): Promise<any>;
+    findOne(id: number): Promise<any>;
 }

@@ -111,19 +111,19 @@ model usuarios {
   apellido2                            String?              @db.VarChar(70)
   email                                String               @db.VarChar(70)
   password_hash                        String?              @db.VarChar(255)
-  google_id                            String?              @unique(map: "google_id") @db.VarChar(100)
   telefono                             String?              @db.VarChar(20)
   estado                               Boolean              @default(true)
   id_rol                               Int
   created_at                           DateTime             @default(now()) @db.Timestamp(0)
   updated_at                           DateTime             @default(now()) @db.Timestamp(0)
   foto_perfil                          String?              @db.VarChar(255)
+  google_id                            String?              @unique(map: "google_id") @db.VarChar(100)
   barberos_servicios                   barberos_servicios[]
+  notificaciones                       notificaciones[]
   portafolios                          portafolios?
   pqrs                                 pqrs[]
-  notificaciones                       notificaciones[]
   resenas_resenas_id_clienteTousuarios resenas[]            @relation("resenas_id_clienteTousuarios")
-  resenas_recibidas                    resenas[]            @relation("ResenasBarbero")
+  resenas_recibidas                    resenas[]            @relation("resenas_id_barberoTousuarios")
   reservas                             reservas[]
   rol                                  rol                  @relation(fields: [id_rol], references: [id_rol], onUpdate: Restrict, map: "fk_rol_usuario")
 
@@ -168,7 +168,7 @@ model resenas {
   id_barbero                            Int?
   id_cliente                            Int?
   usuarios_resenas_id_clienteTousuarios usuarios? @relation("resenas_id_clienteTousuarios", fields: [id_cliente], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_resena_cliente")
-  barbero                               usuarios? @relation("ResenasBarbero", fields: [id_barbero], references: [id_usuario], onUpdate: Restrict, map: "fk_resenas_barbero")
+  barbero                               usuarios? @relation("resenas_id_barberoTousuarios", fields: [id_barbero], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([id_barbero], map: "idx_resena_barbero")
   @@index([id_cliente], map: "fk_resena_cliente")
@@ -203,25 +203,6 @@ model genero_servicio {
   categorias categorias[]
 }
 
-enum codigos_verificacion_tipo {
-  registro
-  recuperacion
-}
-
-enum pqrs_tipo {
-  Peticion
-  Queja
-  Reclamo
-  Sugerencia
-}
-
-enum pqrs_estado {
-  Pendiente
-  En_Proceso @map("En Proceso")
-  Resuelto
-  Cerrado
-}
-
 model notificaciones {
   id_notificacion Int       @id @default(autoincrement())
   titulo          String    @db.VarChar(100)
@@ -244,4 +225,23 @@ model cola_correos {
   error_ultimo  String?   @db.Text
   fecha_creado  DateTime  @default(now()) @db.DateTime(0)
   fecha_intento DateTime? @db.DateTime(0)
+}
+
+enum codigos_verificacion_tipo {
+  registro
+  recuperacion
+}
+
+enum pqrs_tipo {
+  Peticion
+  Queja
+  Reclamo
+  Sugerencia
+}
+
+enum pqrs_estado {
+  Pendiente
+  En_Proceso @map("En Proceso")
+  Resuelto
+  Cerrado
 }
