@@ -1,7 +1,6 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -29,7 +28,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       isGlobal: true,
       ttl: 60000, // 60 segundos (los datos cacheados expiran en 1 minuto)
     }),
-    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     UsersModule,

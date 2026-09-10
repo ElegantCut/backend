@@ -60,10 +60,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(loginDto);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.CORS_ORIGIN !== '*';
     res.cookie('jwt', result.token, {
       httpOnly: true,
-      secure: false, // Debe ser false para http://localhost
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -88,10 +89,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.googleLogin(token);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.CORS_ORIGIN !== '*';
     res.cookie('jwt', result.token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
