@@ -1,10 +1,17 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class EmailService {
-  constructor(private configService: ConfigService) {}
+  private readonly logger = new Logger(EmailService.name);
+
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {}
 
   /**
    * Crea el transporter en el momento del envío (no en el constructor),
@@ -31,6 +38,97 @@ export class EmailService {
       },
     });
   }
+
+  /**
+   * Encola un correo electrónico para ser enviado asíncronamente.
+   */
+  async enqueueEmail(destinatario: string, asunto: string, cuerpo_html: string): Promise<boolean> {
+    try {
+      await this.prisma.cola_correos.create({
+        data: {
+          destinatario,
+          asunto,
+          cuerpo_html,
+          estado: 'Pendiente',
+        },
+      });
+
+      this.logger.log(`Correo encolado para: ${destinatario}`);
+      
+      // Disparamos el procesamiento de forma asíncrona (Fire-and-forget)
+      setTimeout(() => this.processEmailQueue().catch(e => this.logger.error(e)), 100);
+      
+      return true;
+    } catch (error) {
+      this.logger.error('Error al encolar el correo', error);
+      return false;
+    }
+  }
+
+  /**
+   * Tarea periódica que procesa la cola de correos.
+   * Ejecuta cada minuto buscando correos pendientes o fallidos con menos de 3 intentos.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async processEmailQueue(isTestCall = false) {
+    if (process.env.NODE_ENV === 'test' && !isTestCall) return;
+    
+    const pendientes = await this.prisma.cola_correos.findMany({
+      where: {
+        estado: { in: ['Pendiente', 'Fallido'] },
+        intentos: { lt: 3 }, // Máximo 3 intentos
+      },
+      take: 10, // Procesamos en lotes de 10 para no saturar
+      orderBy: { fecha_creado: 'asc' }
+    });
+
+    if (pendientes.length === 0) return;
+
+    const transporter = this.createTransporter();
+    const emailUser = this.configService.get<string>('EMAIL_USER');
+
+    if (!transporter || !emailUser) {
+      this.logger.warn('No se puede procesar la cola: Transporter no configurado');
+      return;
+    }
+
+    for (const correo of pendientes) {
+      try {
+        await this.prisma.cola_correos.update({
+          where: { id_cola: correo.id_cola },
+          data: { intentos: { increment: 1 }, fecha_intento: new Date() }
+        });
+
+        await transporter.sendMail({
+          from: `"Elegant Cut" <${emailUser}>`,
+          to: correo.destinatario,
+          subject: correo.asunto,
+          html: correo.cuerpo_html,
+        });
+
+        await this.prisma.cola_correos.update({
+          where: { id_cola: correo.id_cola },
+          data: { estado: 'Enviado', error_ultimo: null }
+        });
+
+        this.logger.log(`✅ Correo enviado exitosamente a ${correo.destinatario}`);
+      } catch (error) {
+        this.logger.error(`❌ Error enviando correo a ${correo.destinatario}`, error.message);
+        
+        const isFinalAttempt = correo.intentos + 1 >= 3;
+        
+        await this.prisma.cola_correos.update({
+          where: { id_cola: correo.id_cola },
+          data: { 
+            estado: isFinalAttempt ? 'Cancelado' : 'Fallido',
+            error_ultimo: error.message 
+          }
+        });
+      }
+    }
+  }
+
+  // --- MÉTODOS DE NEGOCIO ---
 
   async sendVerificationCode(email: string, code: string): Promise<boolean> {
     const emailUser = this.configService.get('EMAIL_USER');

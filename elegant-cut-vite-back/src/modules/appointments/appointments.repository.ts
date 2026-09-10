@@ -128,11 +128,24 @@ export class AppointmentsRepository {
     });
   }
 
-  async findAppointmentsByBarber(barberId: number) {
+  async findAppointmentsByBarber(barberId: number, date?: string) {
+    const whereClause: any = {
+      id_empleado: barberId,
+    };
+
+    if (date) {
+      const targetDate = new Date(date);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      whereClause.fecha = {
+        gte: targetDate,
+        lt: nextDay,
+      };
+    }
+
     return this.prisma.reservas.findMany({
-      where: {
-        id_empleado: barberId,
-      },
+      where: whereClause,
       include: {
         usuarios: true,
         horarios: true,

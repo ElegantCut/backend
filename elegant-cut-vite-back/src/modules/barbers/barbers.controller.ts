@@ -13,6 +13,7 @@ import {
   UseGuards,
   Req,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -59,11 +60,10 @@ export class BarbersController {
     description: 'Barberos públicos obtenidos correctamente.',
   })
   @UseInterceptors(CacheInterceptor)
-  @CacheKey('barbers_public')
   @CacheTTL(60000) // 60 segundos
   @Get('public')
-  async getPublicBarbers() {
-    return this.barbersService.getPublicBarbers();
+  async getPublicBarbers(@Query('especialidad') especialidad?: string) {
+    return this.barbersService.getPublicBarbers(especialidad);
   }
 
   @ApiBearerAuth()

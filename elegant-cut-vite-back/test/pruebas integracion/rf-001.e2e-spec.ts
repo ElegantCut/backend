@@ -1,22 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
-
 import { AppModule } from '../../src/app.module';
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
-
-  beforeEach(async () => {
-import { AppModule } from './../src/app.module';
-import { PrismaService } from './../src/prisma/prisma.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 describe('App E2E Testing (Elegant-Cut)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let httpServer: any;
 
-  beforeAll(async () => 
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -39,6 +32,16 @@ describe('App E2E Testing (Elegant-Cut)', () => {
 
   beforeEach(async () => {
     // LIMPIEZA DE BD: Borramos la tabla de usuarios antes de cada prueba (Arrange)
+    await prisma.detalle_cita_servicio.deleteMany();
+    await prisma.pagos.deleteMany();
+    await prisma.reservas.deleteMany();
+    await prisma.resenas.deleteMany();
+    await prisma.barberos_servicios.deleteMany();
+    await prisma.portafolios.deleteMany();
+    await prisma.pqrs.deleteMany();
+    await prisma.notificaciones.deleteMany();
+    await prisma.codigos_verificacion.deleteMany();
+    await prisma.cola_correos.deleteMany();
     await prisma.usuarios.deleteMany();
 
     // SETUP DE DATOS NECESARIOS (Foreign Keys)

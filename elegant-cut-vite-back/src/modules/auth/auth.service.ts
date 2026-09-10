@@ -303,17 +303,27 @@ export class AuthService {
   }
 
   async validateToken(user: any) {
+    let freshUser = user;
+    try {
+      freshUser = await this.usersService.findOne(user.id_usuario);
+    } catch (e) {
+      // Si el usuario ya no existe, usamos los datos del token o devolvemos error
+    }
+
     return {
       statusCode: 200,
       message: 'Token validado exitosamente',
       user: {
-        id_usuario: user.id_usuario,
-        username: user.username,
-        email: user.email,
-        id_rol: user.id_rol,
-        role: user.role,
-        name: user.name,
-        userId: user.id_usuario,
+        id_usuario: freshUser.id_usuario || user.id_usuario,
+        username: freshUser.username || user.username,
+        email: freshUser.email || user.email,
+        id_rol: freshUser.id_rol || user.id_rol,
+        role: user.role, // Mantenemos el rol original del token
+        name: freshUser.prim_nombre || user.name,
+        prim_nombre: freshUser.prim_nombre,
+        apellido1: freshUser.apellido1,
+        telefono: freshUser.telefono,
+        userId: freshUser.id_usuario || user.id_usuario,
       },
     };
   }

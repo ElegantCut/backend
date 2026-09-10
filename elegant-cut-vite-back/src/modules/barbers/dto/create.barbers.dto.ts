@@ -6,6 +6,7 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBarberDto {
@@ -21,7 +22,8 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, { message: 'No se admiten caracteres especiales en el campo de su nombre real' })
   seg_nombre?: string;
 
   @ApiProperty({
@@ -39,7 +41,8 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, { message: 'No se admiten caracteres especiales en el campo de su apellido' })
   apellido2?: string;
 
   @ApiProperty({
@@ -56,6 +59,7 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
   username?: string;
 
   @ApiProperty({
@@ -74,6 +78,7 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
   telefono?: string;
 
   @ApiPropertyOptional({
@@ -81,11 +86,13 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
   biografia?: string;
 
   @ApiPropertyOptional({ description: 'Experiencia del barbero' })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
   experiencia?: string;
 
   @ApiPropertyOptional({
@@ -93,5 +100,6 @@ export class CreateBarberDto {
   })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value?.trim() === '' ? undefined : value))
   especialidades?: string;
 }
