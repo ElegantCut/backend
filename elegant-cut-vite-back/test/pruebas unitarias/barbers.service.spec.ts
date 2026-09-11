@@ -23,6 +23,7 @@ describe('BarbersService - Pruebas Unitarias', () => {
       findPortfolioByUserId: jest.fn(),
       updatePortfolio: jest.fn(),
       createPortfolio: jest.fn(),
+      findByEmail: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,6 +57,7 @@ describe('BarbersService - Pruebas Unitarias', () => {
         password_hash: 'hashed_pass',
         prim_nombre: 'Corte'
       });
+      mockRepo.findByEmail.mockResolvedValue(null);
 
       const resultado = await service.crearBarbero(dto as any);
 

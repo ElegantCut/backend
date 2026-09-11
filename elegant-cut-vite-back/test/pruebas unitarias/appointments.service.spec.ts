@@ -93,6 +93,9 @@ describe('AppointmentsService - Pruebas Unitarias', () => {
     });
 
     it('Debe agendar correctamente en un bloque libre y notificar a n8n', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+
       const fechaManana = new Date();
       fechaManana.setDate(fechaManana.getDate() + 1);
 
@@ -115,6 +118,8 @@ describe('AppointmentsService - Pruebas Unitarias', () => {
       expect(resultado).toHaveProperty('id_reservas', 50);
       expect(mockRepo.createAppointmentWithTransaction).toHaveBeenCalled();
       expect(global.fetch).toHaveBeenCalled(); // Verifica que intentó llamar a n8n
+
+      process.env.NODE_ENV = originalEnv;
     });
   });
 
