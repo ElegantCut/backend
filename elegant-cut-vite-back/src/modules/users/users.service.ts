@@ -156,7 +156,9 @@ export class UsersService implements IUserIntegration {
 
     if (!usuario)
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
-    return usuario;
+      
+    const { password_hash, ...result } = usuario as any;
+    return result;
   }
 
   async update(id: number, data: any) {

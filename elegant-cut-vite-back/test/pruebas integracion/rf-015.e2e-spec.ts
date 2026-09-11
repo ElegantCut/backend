@@ -66,12 +66,11 @@ describe('RF-015: Notificaciones por Email y Colas (e2e)', () => {
   });
 
   it('1. Encolar correo asíncronamente: Guarda el correo como "Pendiente" (Status 200/201 en contexto real)', async () => {
-    // Act: Simulamos el envío de una confirmación (que llama a enqueueEmail)
-    const result = await emailService.sendPqrsConfirmation(
+    // Act: Probamos directamente la función de encolado
+    const result = await emailService.enqueueEmail(
       'usuario@test.com',
-      'Juan',
-      'PQRS-1-2026',
-      'queja'
+      'Confirmación PQRS - PQRS-1-2026',
+      '<p>Tu queja fue exitosa!</p>'
     );
 
     // Assert: Debe retornar true inmediatamente y no bloquearse
