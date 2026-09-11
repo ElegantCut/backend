@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicesService } from '../../src/modules/services/services.service';
 import { ServicesRepository } from '../../src/modules/services/services.repository';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CrearServicioDto } from '../../src/modules/services/dto/create-servicio.dto';
 
 describe('ServicesService - Pruebas Unitarias', () => {
@@ -118,15 +118,12 @@ describe('ServicesService - Pruebas Unitarias', () => {
       expect(mockRepo.remove).toHaveBeenCalledWith(1);
     });
 
-    it('Debe atrapar el error y retornar success: false si hay conflicto de llaves foráneas', async () => {
+    it('Debe arrojar BadRequestException si hay conflicto de llaves foráneas', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       mockRepo.findById.mockResolvedValue({ id_servicio: 1 });
       mockRepo.remove.mockRejectedValue(new Error('Foreign key constraint')); // Simula error de BD
 
-      const resultado = await service.remove(1);
-
-      expect(resultado.success).toBe(false);
-      expect(resultado.message).toContain('dependencias');
+      await expect(service.remove(1)).rejects.toThrow(BadRequestException);
       consoleSpy.mockRestore();
     });
   });
