@@ -29,8 +29,8 @@ export class EmailService {
 
     return nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: { user, pass },
       tls: {
         // Esto ayuda si Docker tiene problemas con los certificados raíz
