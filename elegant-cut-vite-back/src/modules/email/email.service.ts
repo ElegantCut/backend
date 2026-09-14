@@ -151,8 +151,9 @@ export class EmailService {
       console.error(
         '❌ [EMAIL] Credenciales no configuradas. Revisa EMAIL_USER y EMAIL_PASS en el .env',
       );
-      // BYPASS: En lugar de fallar, permitimos que pase para probar localmente/Railway
-      return true;
+      throw new InternalServerErrorException(
+        `Configuración de servidor incompleta: Faltan variables EMAIL_USER o EMAIL_PASS`
+      );
     }
 
     try {
@@ -179,11 +180,10 @@ export class EmailService {
     } catch (error) {
       console.error('❌ [EMAIL] Error al enviar correo:');
       console.error(`   Mensaje: ${error.message}`);
-      console.error(`   Código:  ${error.code}`);
-      console.error(`   Detalle: ${JSON.stringify(error.response ?? '')}`);
       
-      console.warn(`[EMAIL] Falló el envío, pero se continuará para pruebas locales/Railway.`);
-      return true;
+      throw new InternalServerErrorException(
+        `Error del servidor de correos: ${error.message}`
+      );
     }
   }
 
