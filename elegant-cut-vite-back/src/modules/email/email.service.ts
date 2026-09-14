@@ -40,8 +40,8 @@ export class EmailService {
       connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 5000,
-      },
-    });
+      family: 4, // <-- Fuerzo el uso de IPv4 para evitar el error ENETUNREACH
+    } as any);
   }
 
   /**
@@ -136,7 +136,9 @@ export class EmailService {
   // --- MÉTODOS DE NEGOCIO ---
 
   async sendVerificationCode(email: string, code: string): Promise<boolean> {
-    const resendApiKey = this.configService.get('RESEND_API_KEY');
+    const resendApiKey = this.configService.get('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+
+    console.log(`[EMAIL] RESEND_API_KEY detectada: ${resendApiKey ? '✅ SÍ' : '❌ NO'}`);
 
     if (resendApiKey) {
       console.log(`[EMAIL] Iniciando envío a ${email} vía RESEND`);
