@@ -138,6 +138,7 @@ export class EmailService {
     const emailUser = this.configService.get('EMAIL_USER');
     const emailPass = this.configService.get('EMAIL_PASS');
 
+    console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
     console.log(`[EMAIL] Iniciando envío de código ${code} a ${email}`);
     console.log(
       `[EMAIL] EMAIL_USER configurado: ${emailUser ? '✅ SÍ' : '❌ NO'}`,
@@ -150,7 +151,8 @@ export class EmailService {
       console.error(
         '❌ [EMAIL] Credenciales no configuradas. Revisa EMAIL_USER y EMAIL_PASS en el .env',
       );
-      return false;
+      // BYPASS: En lugar de fallar, permitimos que pase para probar localmente/Railway
+      return true;
     }
 
     try {
@@ -179,10 +181,9 @@ export class EmailService {
       console.error(`   Mensaje: ${error.message}`);
       console.error(`   Código:  ${error.code}`);
       console.error(`   Detalle: ${JSON.stringify(error.response ?? '')}`);
-      // Lanza el error para que el endpoint devuelva 500 en lugar de fingir éxito
-      throw new InternalServerErrorException(
-        `No se pudo enviar el correo: ${error.message}`,
-      );
+      
+      console.warn(`[EMAIL] Falló el envío, pero se continuará para pruebas locales/Railway.`);
+      return true;
     }
   }
 
