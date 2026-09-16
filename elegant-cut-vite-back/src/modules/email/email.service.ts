@@ -140,47 +140,17 @@ export class EmailService {
   // --- MÉTODOS DE NEGOCIO ---
 
   async sendVerificationCode(email: string, code: string): Promise<boolean> {
-    const emailUser = this.configService.get('EMAIL_USER');
-    const emailPass = this.configService.get('EMAIL_PASS');
-
     console.log(`[EMAIL] ========================================`);
     console.log(`[EMAIL] Enviando código de verificación a: ${email}`);
     console.log(`[EMAIL] ========================================`);
 
-    // Respaldo en consola por si falla el correo
+    // Respaldo en consola
     console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
 
-    if (emailUser && emailPass) {
-      console.log(`[EMAIL] Intentando enviar vía SMTP (Gmail)...`);
-      try {
-        const transporter = this.createTransporter();
-        await transporter.sendMail({
-          from: `"Elegant Cut" <${emailUser}>`,
-          to: email,
-          subject: 'Código de Verificación - Elegant Cut',
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px;">
-              <h2>Verificación de Seguridad</h2>
-              <p>Tu código de verificación es:</p>
-              <h1 style="color: #BC2041; letter-spacing: 5px;">${code}</h1>
-              <p>Este código expirará en 15 minutos.</p>
-              <p>Si no solicitaste este código, ignora este correo.</p>
-            </div>
-          `,
-        });
-        console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía SMTP`);
-        return true;
-      } catch (error) {
-        console.error(' [EMAIL SMTP] Error enviando por SMTP:', error.message);
-        // Si falla SMTP, permitimos que intente con Resend si está configurado
-      }
-    }
-
-    // ─── Envío vía Resend HTTP API como respaldo ───
     const resendApiKey = this.configService.get('RESEND_API_KEY') || process.env.RESEND_API_KEY;
     
     if (resendApiKey) {
-      console.log(`[EMAIL] Usando Resend HTTP API como respaldo...`);
+      console.log(`[EMAIL] Usando Resend HTTP API (Railway bloquea SMTP)...`);
       try {
         const resend = new Resend(resendApiKey);
         const { data, error } = await resend.emails.send({
@@ -206,11 +176,12 @@ export class EmailService {
         return true;
       } catch (error) {
         console.error(' [EMAIL RESEND] Error de la API de Resend:', error.message);
+        throw new InternalServerErrorException('Error al enviar correo vía Resend: ' + error.message);
       }
     }
 
     throw new InternalServerErrorException(
-      `No se pudo enviar el correo de ninguna forma. Verifica las credenciales de SMTP o Resend en las variables de entorno.`
+      `No se pudo enviar el correo. Railway bloquea SMTP y no hay RESEND_API_KEY configurada.`
     );
   }
 
