@@ -136,15 +136,27 @@ export class EmailService {
   // --- MÉTODOS DE NEGOCIO ---
 
   async sendVerificationCode(email: string, code: string): Promise<boolean> {
-    const resendApiKey = this.configService.get('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+    // Intentar obtener la API key de Resend de todas las fuentes posibles
+    const resendApiKey =
+      this.configService.get('RESEND_API_KEY') ||
+      process.env.RESEND_API_KEY ||
+      '';
 
-    console.log(`[EMAIL] RESEND_API_KEY detectada: ${resendApiKey ? '✅ SÍ' : '❌ NO'}`);
+    console.log(`[EMAIL] ========================================`);
+    console.log(`[EMAIL] Enviando código de verificación a: ${email}`);
+    console.log(`[EMAIL] RESEND_API_KEY detectada: ${resendApiKey ? '✅ SÍ (' + resendApiKey.substring(0, 8) + '...)' : '❌ NO'}`);
+    console.log(`[EMAIL] Todas las env vars con RESEND: ${Object.keys(process.env).filter(k => k.includes('RESEND')).join(', ') || 'NINGUNA'}`);
+    console.log(`[EMAIL] ========================================`);
+
+    // Siempre imprimir el código en logs como respaldo
+    console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
 
     if (resendApiKey) {
-      console.log(`[EMAIL] Iniciando envío a ${email} vía RESEND`);
+      // ─── Envío vía Resend HTTP API (funciona en Railway/Vercel/cualquier hosting) ───
+      console.log(`[EMAIL] Usando Resend HTTP API...`);
       try {
         const resend = new Resend(resendApiKey);
-        const { error } = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: 'Elegant Cut <onboarding@resend.dev>',
           to: email,
           subject: 'Código de Verificación - Elegant Cut',
@@ -159,42 +171,35 @@ export class EmailService {
           `,
         });
 
-        if (error) throw new Error(error.message);
+        if (error) {
+          console.error(`❌ [EMAIL RESEND] Error de la API:`, JSON.stringify(error));
+          throw new Error(error.message);
+        }
 
-        console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email} vía RESEND`);
+        console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email} vía RESEND. ID: ${data?.id}`);
         return true;
       } catch (error) {
-        console.error('❌ [EMAIL RESEND] Error:', error);
-        throw new InternalServerErrorException(`Error de servidor (Resend): ${error.message}`);
+        console.error('❌ [EMAIL RESEND] Excepción:', error);
+        console.warn('⚠️ [EMAIL RESEND] Falló Resend, intentando SMTP como respaldo...');
+        // No lanzamos error para permitir el fallback a SMTP
       }
     }
 
-    // Fallback a Nodemailer
+    // ─── Sin RESEND_API_KEY: intentar SMTP como último recurso ───
+    console.warn(`⚠️ [EMAIL] RESEND_API_KEY no configurada. Intentando SMTP (probablemente fallará en Railway)...`);
+
     const emailUser = this.configService.get('EMAIL_USER');
     const emailPass = this.configService.get('EMAIL_PASS');
 
-    console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
-    console.log(`[EMAIL] Iniciando envío de código ${code} a ${email}`);
-    console.log(
-      `[EMAIL] EMAIL_USER configurado: ${emailUser ? '✅ SÍ' : '❌ NO'}`,
-    );
-    console.log(
-      `[EMAIL] EMAIL_PASS configurado: ${emailPass ? '✅ SÍ' : '❌ NO'}`,
-    );
-
     if (!emailUser || !emailPass) {
-      console.error(
-        '❌ [EMAIL] Credenciales no configuradas. Revisa EMAIL_USER y EMAIL_PASS en el .env',
-      );
       throw new InternalServerErrorException(
-        `Configuración de servidor incompleta: Faltan variables EMAIL_USER o EMAIL_PASS`
+        `No se puede enviar correo: Falta RESEND_API_KEY y también faltan EMAIL_USER/EMAIL_PASS`
       );
     }
 
     try {
       const transporter = this.createTransporter();
-
-      const mailOptions = {
+      await transporter.sendMail({
         from: `"Elegant Cut" <${emailUser}>`,
         to: email,
         subject: 'Código de Verificación - Elegant Cut',
@@ -207,17 +212,13 @@ export class EmailService {
             <p>Si no solicitaste este código, ignora este correo.</p>
           </div>
         `,
-      };
-
-      await transporter.sendMail(mailOptions);
-      console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email}`);
+      });
+      console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email} vía SMTP`);
       return true;
     } catch (error) {
-      console.error('❌ [EMAIL] Error al enviar correo:');
-      console.error(`   Mensaje: ${error.message}`);
-      
+      console.error('❌ [EMAIL SMTP] Error:', error.message);
       throw new InternalServerErrorException(
-        `Error del servidor de correos: ${error.message}`
+        `No se pudo enviar el correo. SMTP bloqueado (${error.message}). Configura RESEND_API_KEY en las variables de entorno de Railway.`
       );
     }
   }
