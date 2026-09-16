@@ -4,7 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Resend } from 'resend';
+import * as dns from 'dns';
 
+// Solución para servidores (como Railway o Docker) que intentan conectarse por IPv6 
+// y fallan (ENETUNREACH). Esto fuerza a Node.js a preferir IPv4.
+dns.setDefaultResultOrder('ipv4first');
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
