@@ -12,7 +12,7 @@ export class EmailService {
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * Crea el transporter en el momento del envío (no en el constructor),
@@ -30,16 +30,16 @@ export class EmailService {
 
     return nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true, // true para 465, false para otros puertos
       auth: { user, pass },
       tls: {
         // Esto ayuda si Docker tiene problemas con los certificados raíz
         rejectUnauthorized: false,
       },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
       family: 4, // <-- Fuerzo el uso de IPv4 para evitar el error ENETUNREACH
     } as any);
   }
@@ -59,10 +59,10 @@ export class EmailService {
       });
 
       this.logger.log(`Correo encolado para: ${destinatario}`);
-      
+
       // Disparamos el procesamiento de forma asíncrona (Fire-and-forget)
       setTimeout(() => this.processEmailQueue().catch(e => this.logger.error(e)), 100);
-      
+
       return true;
     } catch (error) {
       this.logger.error('Error al encolar el correo', error);
@@ -77,7 +77,7 @@ export class EmailService {
   @Cron(CronExpression.EVERY_MINUTE)
   async processEmailQueue(isTestCall = false) {
     if (process.env.NODE_ENV === 'test' && !isTestCall) return;
-    
+
     const pendientes = await this.prisma.cola_correos.findMany({
       where: {
         estado: { in: ['Pendiente', 'Fallido'] },
@@ -119,14 +119,14 @@ export class EmailService {
         this.logger.log(`✅ Correo enviado exitosamente a ${correo.destinatario}`);
       } catch (error) {
         this.logger.error(`❌ Error enviando correo a ${correo.destinatario}`, error.message);
-        
+
         const isFinalAttempt = correo.intentos + 1 >= 3;
-        
+
         await this.prisma.cola_correos.update({
           where: { id_cola: correo.id_cola },
-          data: { 
+          data: {
             estado: isFinalAttempt ? 'Cancelado' : 'Fallido',
-            error_ultimo: error.message 
+            error_ultimo: error.message
           }
         });
       }
@@ -172,21 +172,21 @@ export class EmailService {
         });
 
         if (error) {
-          console.error(`❌ [EMAIL RESEND] Error de la API:`, JSON.stringify(error));
+          console.error(` [EMAIL RESEND] Error de la API:`, JSON.stringify(error));
           throw new Error(error.message);
         }
 
-        console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email} vía RESEND. ID: ${data?.id}`);
+        console.log(`[EMAIL]  Correo enviado exitosamente a ${email} vía RESEND. ID: ${data?.id}`);
         return true;
       } catch (error) {
-        console.error('❌ [EMAIL RESEND] Excepción:', error);
-        console.warn('⚠️ [EMAIL RESEND] Falló Resend, intentando SMTP como respaldo...');
+        console.error(' [EMAIL RESEND] Excepción:', error);
+        console.warn(' [EMAIL RESEND] Falló Resend, intentando SMTP como respaldo...');
         // No lanzamos error para permitir el fallback a SMTP
       }
     }
 
     // ─── Sin RESEND_API_KEY: intentar SMTP como último recurso ───
-    console.warn(`⚠️ [EMAIL] RESEND_API_KEY no configurada. Intentando SMTP (probablemente fallará en Railway)...`);
+    console.warn(` [EMAIL] RESEND_API_KEY no configurada. Intentando SMTP (probablemente fallará en Railway)...`);
 
     const emailUser = this.configService.get('EMAIL_USER');
     const emailPass = this.configService.get('EMAIL_PASS');
@@ -213,10 +213,10 @@ export class EmailService {
           </div>
         `,
       });
-      console.log(`[EMAIL] ✅ Correo enviado exitosamente a ${email} vía SMTP`);
+      console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía SMTP`);
       return true;
     } catch (error) {
-      console.error('❌ [EMAIL SMTP] Error:', error.message);
+      console.error(' [EMAIL SMTP] Error:', error.message);
       throw new InternalServerErrorException(
         `No se pudo enviar el correo. SMTP bloqueado (${error.message}). Configura RESEND_API_KEY en las variables de entorno de Railway.`
       );
@@ -233,7 +233,7 @@ export class EmailService {
     const emailPass = this.configService.get('EMAIL_PASS');
 
     if (!emailUser || !emailPass) {
-      console.error('❌ [EMAIL] Credenciales no configuradas para PQRS.');
+      console.error(' [EMAIL] Credenciales no configuradas para PQRS.');
       return false;
     }
 
@@ -263,12 +263,12 @@ export class EmailService {
           </div>
         `,
       };
-
+      //Confirma la pqr enviada
       await transporter.sendMail(mailOptions);
-      console.log(`[EMAIL] ✅ Confirmación PQRS enviada a ${email}`);
+      console.log(`[EMAIL]  Confirmación PQRS enviada a ${email}`);
       return true;
     } catch (error) {
-      console.error('❌ [EMAIL] Error en confirmación PQRS:');
+      console.error(' [EMAIL] Error en confirmación PQRS:');
       console.error(`   Mensaje: ${error.message}`);
       console.error(`   Código:  ${error.code}`);
       return false;
