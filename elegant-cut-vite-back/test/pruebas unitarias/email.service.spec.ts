@@ -10,6 +10,14 @@ jest.mock('nodemailer', () => ({
   }),
 }));
 
+jest.mock('resend', () => ({
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: {
+      send: jest.fn().mockResolvedValue({ data: { id: 'mock-id' }, error: null }),
+    },
+  })),
+}));
+
 describe('EmailService - Pruebas Unitarias', () => {
   let service: EmailService;
   let mockPrisma: any;
