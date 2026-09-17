@@ -3,11 +3,14 @@ import { UsersRepository } from './users.repository';
 import * as bcrypt from 'bcryptjs';
 import { CrearUsuarioDto } from './dto/create-users.dto';
 import { IUserIntegration } from './interfaces/user-integration.interface';
+import { UploadsService } from '../uploads/uploads.service';
+import { buildCloudinaryUrl } from '../../common/helpers/cloudinary-url.helper';
 
 @Injectable()
 export class UsersService implements IUserIntegration {
   constructor(
     private readonly usersRepo: UsersRepository,
+    private readonly uploadsService: UploadsService,
   ) { }
 
   async findOneByUsername(username: string) {
@@ -58,6 +61,30 @@ export class UsersService implements IUserIntegration {
 
     // 2. Actualizamos la columna foto_perfil con el ID de Cloudinary
     return await this.usersRepo.updateProfilePhoto(id_usuario, public_id);
+  }
+
+  /**
+   * SUBIR Y ACTUALIZAR FOTO DE PERFIL
+   * Recibe el archivo, lo sube a Cloudinary, y guarda el public_id en la BD.
+   * Usado por el endpoint POST /users/profile-photo
+   */
+  async uploadAndUpdatePhoto(userId: number, file: Express.Multer.File) {
+    // 1. Verificar que el usuario exista
+    const usuario = await this.usersRepo.findById(userId);
+    if (!usuario) {
+      throw new NotFoundException(`El usuario con ID ${userId} no fue encontrado.`);
+    }
+
+    // 2. Subir a Cloudinary
+    const cloudinaryResult = await this.uploadsService.uploadFile(file);
+    const publicId = cloudinaryResult.public_id;
+
+    // 3. Guardar el public_id en la BD
+    await this.usersRepo.updateProfilePhoto(userId, publicId);
+
+    // 4. Construir y retornar la URL completa
+    const photoUrl = buildCloudinaryUrl(publicId);
+    return { success: true, photoUrl, publicId };
   }
 
   async obtenerTodos() {

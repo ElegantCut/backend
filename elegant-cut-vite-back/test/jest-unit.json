@@ -1,0 +1,32 @@
+{
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": "..",
+  "roots": [
+    "<rootDir>/test/pruebas unitarias"
+  ],
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
+  "testEnvironment": "node",
+  "setupFilesAfterEnv": [
+    "<rootDir>/test/setup-silent-logger.ts"
+  ],
+  "reporters": [
+    "default",
+    [
+      "<rootDir>/test/reporters/markdown-reporter.js",
+      {
+        "outputFile": "test-report-unit.md",
+        "title": "Reporte de Pruebas Unitarias"
+      }
+    ]
+  ]
+}

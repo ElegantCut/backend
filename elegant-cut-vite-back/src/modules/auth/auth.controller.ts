@@ -116,10 +116,11 @@ export class AuthController {
     @Res({ passthrough: false }) res: Response,
   ) {
     const result = await this.authService.googleLoginServerSide(req.user);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.CORS_ORIGIN !== '*';
     res.cookie('jwt', result.token, {
       httpOnly: true,
-      secure: false, // Debe ser false para localhost
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
