@@ -1,42 +1,51 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Resend } from 'resend';
+import * as dns from 'dns';
 
+// Solución para servidores (como Railway o Docker) que intentan conectarse por IPv6 
+// y fallan (ENETUNREACH). Esto fuerza a Node.js a preferir IPv4.
+dns.setDefaultResultOrder('ipv4first');
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter | null = null;
 
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
-  private getTransporter() {
-    if (this.transporter) return this.transporter;
-
+  /**
+   * Crea el transporter en el momento del envío (no en el constructor),
+   * para garantizar que las variables de entorno ya estén cargadas.
+   */
+  private createTransporter() {
     const user = this.configService.get<string>('EMAIL_USER');
+    // Quitar los espacios del App Password (Google a veces los rechaza si se envían con espacios)
     const rawPass = this.configService.get<string>('EMAIL_PASS') || '';
     const pass = rawPass.replace(/\s+/g, '');
 
-    if (!user || !pass) {
-      this.logger.warn('Credenciales de correo no configuradas.');
-      return null;
-    }
+    console.log(
+      `[EMAIL] Configurando transporter con usuario: ${user ? user : '⚠️ NO DEFINIDO'}`,
+    );
 
-    this.transporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
-      secure: true,
+      secure: true, // true para 465, false para otros puertos
       auth: { user, pass },
       tls: {
+        // Esto ayuda si Docker tiene problemas con los certificados raíz
         rejectUnauthorized: false,
       },
-    });
-
-    return this.transporter;
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
+      family: 4, // <-- Fuerzo el uso de IPv4 para evitar el error ENETUNREACH
+    } as any);
   }
 
   /**
@@ -54,10 +63,10 @@ export class EmailService {
       });
 
       this.logger.log(`Correo encolado para: ${destinatario}`);
-      
+
       // Disparamos el procesamiento de forma asíncrona (Fire-and-forget)
       setTimeout(() => this.processEmailQueue().catch(e => this.logger.error(e)), 100);
-      
+
       return true;
     } catch (error) {
       this.logger.error('Error al encolar el correo', error);
@@ -72,7 +81,7 @@ export class EmailService {
   @Cron(CronExpression.EVERY_MINUTE)
   async processEmailQueue(isTestCall = false) {
     if (process.env.NODE_ENV === 'test' && !isTestCall) return;
-    
+
     const pendientes = await this.prisma.cola_correos.findMany({
       where: {
         estado: { in: ['Pendiente', 'Fallido'] },
@@ -84,7 +93,7 @@ export class EmailService {
 
     if (pendientes.length === 0) return;
 
-    const transporter = this.getTransporter();
+    const transporter = this.createTransporter();
     const emailUser = this.configService.get<string>('EMAIL_USER');
 
     if (!transporter || !emailUser) {
@@ -114,14 +123,14 @@ export class EmailService {
         this.logger.log(`✅ Correo enviado exitosamente a ${correo.destinatario}`);
       } catch (error) {
         this.logger.error(`❌ Error enviando correo a ${correo.destinatario}`, error.message);
-        
+
         const isFinalAttempt = correo.intentos + 1 >= 3;
-        
+
         await this.prisma.cola_correos.update({
           where: { id_cola: correo.id_cola },
-          data: { 
+          data: {
             estado: isFinalAttempt ? 'Cancelado' : 'Fallido',
-            error_ultimo: error.message 
+            error_ultimo: error.message
           }
         });
       }
@@ -131,18 +140,49 @@ export class EmailService {
   // --- MÉTODOS DE NEGOCIO ---
 
   async sendVerificationCode(email: string, code: string): Promise<boolean> {
-    const subject = 'Código de Verificación - Elegant Cut';
-    const html = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Verificación de Seguridad</h2>
-        <p>Tu código de verificación es:</p>
-        <h1 style="color: #BC2041; letter-spacing: 5px;">${code}</h1>
-        <p>Este código expirará en 15 minutos.</p>
-        <p>Si no solicitaste este código, ignora este correo.</p>
-      </div>
-    `;
+    console.log(`[EMAIL] ========================================`);
+    console.log(`[EMAIL] Enviando código de verificación a: ${email}`);
+    console.log(`[EMAIL] ========================================`);
 
-    return this.enqueueEmail(email, subject, html);
+    // Respaldo en consola
+    console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
+
+    const resendApiKey = this.configService.get('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+    
+    if (resendApiKey) {
+      console.log(`[EMAIL] Usando Resend HTTP API (Railway bloquea SMTP)...`);
+      try {
+        const resend = new Resend(resendApiKey);
+        const { data, error } = await resend.emails.send({
+          from: 'Elegant Cut <onboarding@resend.dev>',
+          to: email,
+          subject: 'Código de Verificación - Elegant Cut',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Verificación de Seguridad</h2>
+              <p>Tu código de verificación es:</p>
+              <h1 style="color: #BC2041; letter-spacing: 5px;">${code}</h1>
+              <p>Este código expirará en 15 minutos.</p>
+              <p>Si no solicitaste este código, ignora este correo.</p>
+            </div>
+          `,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía RESEND. ID: ${data?.id}`);
+        return true;
+      } catch (error) {
+        console.error(' [EMAIL RESEND] Error de la API de Resend:', error.message);
+        throw new InternalServerErrorException('Error al enviar correo vía Resend: ' + error.message);
+      }
+    }
+
+    throw new InternalServerErrorException(
+      `No se pudo enviar el correo. Railway bloquea SMTP y no hay RESEND_API_KEY configurada.`
+    );
   }
 
   async sendPqrsConfirmation(
@@ -151,26 +191,49 @@ export class EmailService {
     radicado: string,
     type: string,
   ): Promise<boolean> {
-    const subject = `Confirmación de PQRS - ${radicado}`;
-    const message =
-      type === 'peticion'
-        ? '¡Tu petición fue exitosa!'
-        : type === 'queja'
-          ? '¡Tu queja fue exitosa!'
-          : `Tu ${type} ha sido radicada exitosamente.`;
+    const emailUser = this.configService.get('EMAIL_USER');
+    const emailPass = this.configService.get('EMAIL_PASS');
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e1e1; border-radius: 5px;">
-        <h2 style="color: #BC2041;">Elegant Cut</h2>
-        <h3>${message}</h3>
-        <p>Hola <strong>${userName}</strong>,</p>
-        <p>Hemos recibido tu solicitud correctamente.</p>
-        <p><strong>Número de Radicado:</strong> ${radicado}</p>
-        <br>
-        <p>Gracias por contactarnos.</p>
-      </div>
-    `;
+    if (!emailUser || !emailPass) {
+      console.error(' [EMAIL] Credenciales no configuradas para PQRS.');
+      return false;
+    }
 
-    return this.enqueueEmail(email, subject, html);
+    try {
+      const transporter = this.createTransporter();
+
+      const message =
+        type === 'peticion'
+          ? '¡Tu petición fue exitosa!'
+          : type === 'queja'
+            ? '¡Tu queja fue exitosa!'
+            : `Tu ${type} ha sido radicada exitosamente.`;
+
+      const mailOptions = {
+        from: `"Elegant Cut" <${emailUser}>`,
+        to: email,
+        subject: `Confirmación de PQRS - ${radicado}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e1e1; border-radius: 5px;">
+            <h2 style="color: #BC2041;">Elegant Cut</h2>
+            <h3>${message}</h3>
+            <p>Hola <strong>${userName}</strong>,</p>
+            <p>Hemos recibido tu solicitud correctamente.</p>
+            <p><strong>Número de Radicado:</strong> ${radicado}</p>
+            <br>
+            <p>Gracias por contactarnos.</p>
+          </div>
+        `,
+      };
+      //Confirma la pqr enviada
+      await transporter.sendMail(mailOptions);
+      console.log(`[EMAIL]  Confirmación PQRS enviada a ${email}`);
+      return true;
+    } catch (error) {
+      console.error(' [EMAIL] Error en confirmación PQRS:');
+      console.error(`   Mensaje: ${error.message}`);
+      console.error(`   Código:  ${error.code}`);
+      return false;
+    }
   }
 }
