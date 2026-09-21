@@ -158,15 +158,14 @@ export class EmailService {
     // Respaldo en consola
     console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
 
+    const brevoApiKey = this.configService.get('BREVO_API_KEY') || process.env.BREVO_API_KEY;
     const emailUser = this.configService.get('EMAIL_USER');
     
-    if (!emailUser) {
-      throw new InternalServerErrorException('No hay configuración de correo (EMAIL_USER) en el servidor.');
+    if (!brevoApiKey) {
+      throw new InternalServerErrorException('Falta la configuración de BREVO_API_KEY en el servidor.');
     }
 
     try {
-      const transporter = await this.createTransporter();
-      
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2>Verificación de Seguridad</h2>
@@ -177,18 +176,32 @@ export class EmailService {
         </div>
       `;
 
-      await transporter.sendMail({
-        from: `"Elegant Cut" <${emailUser}>`,
-        to: email,
-        subject: 'Código de Verificación - Elegant Cut',
-        html: htmlContent,
+      // Usamos la API HTTP de Brevo (Sendinblue) para saltarnos el bloqueo SMTP de Railway
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { email: emailUser || 'jn147860@gmail.com', name: 'Elegant Cut' },
+          to: [{ email: email }],
+          subject: 'Código de Verificación - Elegant Cut',
+          htmlContent: htmlContent
+        })
       });
 
-      console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía Gmail SMTP.`);
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error de Brevo: ${errorData}`);
+      }
+
+      console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía Brevo HTTP API.`);
       return true;
     } catch (error) {
-      console.error(' [EMAIL SMTP] Error enviando correo:', error.message);
-      throw new InternalServerErrorException('Error al enviar correo vía SMTP: ' + error.message);
+      console.error(' [EMAIL BREVO] Error enviando correo:', error.message);
+      throw new InternalServerErrorException('Error al enviar correo vía Brevo: ' + error.message);
     }
   }
 
