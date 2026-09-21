@@ -147,42 +147,38 @@ export class EmailService {
     // Respaldo en consola
     console.log(`\n\n=========================================\n[EMAIL BYPASS] CÓDIGO DE VERIFICACIÓN PARA ${email}:\n>>> ${code} <<<\n=========================================\n\n`);
 
-    const resendApiKey = this.configService.get('RESEND_API_KEY') || process.env.RESEND_API_KEY;
+    const emailUser = this.configService.get('EMAIL_USER');
     
-    if (resendApiKey) {
-      console.log(`[EMAIL] Usando Resend HTTP API (Railway bloquea SMTP)...`);
-      try {
-        const resend = new Resend(resendApiKey);
-        const { data, error } = await resend.emails.send({
-          from: 'Elegant Cut <onboarding@resend.dev>',
-          to: email,
-          subject: 'Código de Verificación - Elegant Cut',
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px;">
-              <h2>Verificación de Seguridad</h2>
-              <p>Tu código de verificación es:</p>
-              <h1 style="color: #BC2041; letter-spacing: 5px;">${code}</h1>
-              <p>Este código expirará en 15 minutos.</p>
-              <p>Si no solicitaste este código, ignora este correo.</p>
-            </div>
-          `,
-        });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía RESEND. ID: ${data?.id}`);
-        return true;
-      } catch (error) {
-        console.error(' [EMAIL RESEND] Error de la API de Resend:', error.message);
-        throw new InternalServerErrorException('Error al enviar correo vía Resend: ' + error.message);
-      }
+    if (!emailUser) {
+      throw new InternalServerErrorException('No hay configuración de correo (EMAIL_USER) en el servidor.');
     }
 
-    throw new InternalServerErrorException(
-      `No se pudo enviar el correo. Railway bloquea SMTP y no hay RESEND_API_KEY configurada.`
-    );
+    try {
+      const transporter = this.createTransporter();
+      
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Verificación de Seguridad</h2>
+          <p>Tu código de verificación es:</p>
+          <h1 style="color: #BC2041; letter-spacing: 5px;">${code}</h1>
+          <p>Este código expirará en 15 minutos.</p>
+          <p>Si no solicitaste este código, ignora este correo.</p>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: `"Elegant Cut" <${emailUser}>`,
+        to: email,
+        subject: 'Código de Verificación - Elegant Cut',
+        html: htmlContent,
+      });
+
+      console.log(`[EMAIL] Correo enviado exitosamente a ${email} vía Gmail SMTP.`);
+      return true;
+    } catch (error) {
+      console.error(' [EMAIL SMTP] Error enviando correo:', error.message);
+      throw new InternalServerErrorException('Error al enviar correo vía SMTP: ' + error.message);
+    }
   }
 
   async sendPqrsConfirmation(
