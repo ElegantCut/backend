@@ -22,7 +22,7 @@ export class EmailService {
    * Crea el transporter en el momento del envío (no en el constructor),
    * para garantizar que las variables de entorno ya estén cargadas.
    */
-  private createTransporter() {
+  private async createTransporter() {
     const user = this.configService.get<string>('EMAIL_USER');
     // Quitar los espacios del App Password (Google a veces los rechaza si se envían con espacios)
     const rawPass = this.configService.get<string>('EMAIL_PASS') || '';
@@ -32,19 +32,30 @@ export class EmailService {
       `[EMAIL] Configurando transporter con usuario: ${user ? user : '⚠️ NO DEFINIDO'}`,
     );
 
+    // Resolución manual de IPv4 para evitar error ENETUNREACH en Railway (IPv6)
+    const dns = require('dns').promises;
+    let smtpHost = 'smtp.gmail.com';
+    try {
+      const { address } = await dns.lookup('smtp.gmail.com', { family: 4 });
+      smtpHost = address;
+      console.log(`[EMAIL] IPv4 resuelta para smtp.gmail.com: ${smtpHost}`);
+    } catch (e) {
+      console.error(`[EMAIL] Error resolviendo IPv4 para smtp.gmail.com:`, e.message);
+    }
+
     return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+      host: smtpHost,
       port: 587,
       secure: false, // false para 587 (usa STARTTLS), true para 465
       auth: { user, pass },
       tls: {
+        servername: 'smtp.gmail.com', // Requerido si nos conectamos por IP
         // Esto ayuda si Docker tiene problemas con los certificados raíz
         rejectUnauthorized: false,
       },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 15000,
-      family: 4, // <-- Fuerzo el uso de IPv4 para evitar el error ENETUNREACH
     } as any);
   }
 
@@ -93,7 +104,7 @@ export class EmailService {
 
     if (pendientes.length === 0) return;
 
-    const transporter = this.createTransporter();
+    const transporter = await this.createTransporter();
     const emailUser = this.configService.get<string>('EMAIL_USER');
 
     if (!transporter || !emailUser) {
@@ -154,7 +165,7 @@ export class EmailService {
     }
 
     try {
-      const transporter = this.createTransporter();
+      const transporter = await this.createTransporter();
       
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -196,7 +207,7 @@ export class EmailService {
     }
 
     try {
-      const transporter = this.createTransporter();
+      const transporter = await this.createTransporter();
 
       const message =
         type === 'peticion'
